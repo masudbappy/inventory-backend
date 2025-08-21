@@ -1,13 +1,13 @@
 -- Create database schema for inventory management system
 
--- Create ENUM types
-CREATE TYPE user_role AS ENUM ('ADMIN', 'MANAGER', 'STAFF');
-CREATE TYPE payment_status AS ENUM ('PAID', 'PARTIAL', 'UNPAID');
+    -- Create ENUM types
+    CREATE TYPE user_role AS ENUM ('ADMIN', 'MANAGER', 'STAFF');
+    CREATE TYPE payment_status AS ENUM ('PAID', 'PARTIAL', 'UNPAID');
 
 -- Create tables
 
 -- WAREHOUSE table
-CREATE TABLE warehouse (
+CREATE TABLE IF NOT EXISTS warehouse (
     warehouse_id BIGSERIAL PRIMARY KEY,
     warehouse_name VARCHAR(255) NOT NULL,
     location VARCHAR(500),
@@ -16,7 +16,7 @@ CREATE TABLE warehouse (
 );
 
 -- CATEGORY table
-CREATE TABLE category (
+CREATE TABLE IF NOT EXISTS category (
     category_id BIGSERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -24,7 +24,7 @@ CREATE TABLE category (
 );
 
 -- TYPE table
-CREATE TABLE type (
+CREATE TABLE IF NOT EXISTS type (
     type_id BIGSERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -32,7 +32,7 @@ CREATE TABLE type (
 );
 
 -- SUPPLIER table
-CREATE TABLE supplier (
+CREATE TABLE IF NOT EXISTS supplier (
     supplier_id BIGSERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     contact_number VARCHAR(20),
@@ -42,7 +42,7 @@ CREATE TABLE supplier (
 );
 
 -- CUSTOMER table
-CREATE TABLE customer (
+CREATE TABLE IF NOT EXISTS customer (
     customer_id BIGSERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     contact_number VARCHAR(20),
@@ -54,7 +54,7 @@ CREATE TABLE customer (
 );
 
 -- PRODUCT table
-CREATE TABLE product (
+CREATE TABLE IF NOT EXISTS product (
     product_id BIGSERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     product_code VARCHAR(100) UNIQUE,
@@ -73,7 +73,7 @@ CREATE TABLE product (
 );
 
 -- PURCHASE table
-CREATE TABLE purchase (
+CREATE TABLE IF NOT EXISTS purchase (
     purchase_id BIGSERIAL PRIMARY KEY,
     supplier_id BIGINT REFERENCES supplier(supplier_id),
     date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -88,7 +88,7 @@ CREATE TABLE purchase (
 );
 
 -- PURCHASE_DETAIL table
-CREATE TABLE purchase_detail (
+CREATE TABLE IF NOT EXISTS purchase_detail (
     purchase_detail_id BIGSERIAL PRIMARY KEY,
     purchase_id BIGINT REFERENCES purchase(purchase_id) ON DELETE CASCADE,
     product_id BIGINT REFERENCES product(product_id),
@@ -99,7 +99,7 @@ CREATE TABLE purchase_detail (
 );
 
 -- SALE table
-CREATE TABLE sale (
+CREATE TABLE IF NOT EXISTS sale (
     sale_id BIGSERIAL PRIMARY KEY,
     customer_id BIGINT REFERENCES customer(customer_id),
     user_id BIGINT REFERENCES users(user_id),
@@ -113,7 +113,7 @@ CREATE TABLE sale (
 );
 
 -- SALES_ORDER table
-CREATE TABLE sales_order (
+CREATE TABLE IF NOT EXISTS sales_order (
     sales_order_id BIGSERIAL PRIMARY KEY,
     product_id BIGINT REFERENCES product(product_id),
     sale_id BIGINT REFERENCES sale(sale_id) ON DELETE CASCADE,
@@ -124,7 +124,7 @@ CREATE TABLE sales_order (
 );
 
 -- PAYMENT_LOG table
-CREATE TABLE payment_log (
+CREATE TABLE IF NOT EXISTS payment_log (
     payment_log_id BIGSERIAL PRIMARY KEY,
     sale_id BIGINT REFERENCES sale(sale_id),
     user_id BIGINT REFERENCES users(user_id),
@@ -135,7 +135,7 @@ CREATE TABLE payment_log (
 );
 
 -- EXPENSE table
-CREATE TABLE expense (
+CREATE TABLE IF NOT EXISTS expense (
     expense_id BIGSERIAL PRIMARY KEY,
     user_id BIGINT REFERENCES users(user_id),
     category VARCHAR(255) NOT NULL,
@@ -146,15 +146,15 @@ CREATE TABLE expense (
 );
 
 -- Create indexes for better performance
-CREATE INDEX idx_product_warehouse ON product(warehouse_id);
-CREATE INDEX idx_product_category ON product(category_id);
-CREATE INDEX idx_product_supplier ON product(supplier_id);
-CREATE INDEX idx_product_type ON product(type_id);
-CREATE INDEX idx_purchase_supplier ON purchase(supplier_id);
-CREATE INDEX idx_sale_customer ON sale(customer_id);
-CREATE INDEX idx_sale_user ON sale(user_id);
-CREATE INDEX idx_payment_log_sale ON payment_log(sale_id);
-CREATE INDEX idx_expense_user ON expense(user_id);
+CREATE INDEX IF NOT EXISTS idx_product_warehouse ON product(warehouse_id);
+CREATE INDEX IF NOT EXISTS idx_product_category ON product(category_id);
+CREATE INDEX IF NOT EXISTS idx_product_supplier ON product(supplier_id);
+CREATE INDEX IF NOT EXISTS idx_product_type ON product(type_id);
+CREATE INDEX IF NOT EXISTS idx_purchase_supplier ON purchase(supplier_id);
+CREATE INDEX IF NOT EXISTS idx_sale_customer ON sale(customer_id);
+CREATE INDEX IF NOT EXISTS idx_sale_user ON sale(user_id);
+CREATE INDEX IF NOT EXISTS idx_payment_log_sale ON payment_log(sale_id);
+CREATE INDEX IF NOT EXISTS idx_expense_user ON expense(user_id);
 
 -- Create triggers for updating updated_at timestamps
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -166,16 +166,16 @@ END;
 $$ language 'plpgsql';
 
 -- Apply triggers to all tables
-CREATE TRIGGER update_warehouse_updated_at BEFORE UPDATE ON warehouse FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_category_updated_at BEFORE UPDATE ON category FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_type_updated_at BEFORE UPDATE ON type FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_supplier_updated_at BEFORE UPDATE ON supplier FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_customer_updated_at BEFORE UPDATE ON customer FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_product_updated_at BEFORE UPDATE ON product FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_purchase_updated_at BEFORE UPDATE ON purchase FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_purchase_detail_updated_at BEFORE UPDATE ON purchase_detail FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_sale_updated_at BEFORE UPDATE ON sale FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_sales_order_updated_at BEFORE UPDATE ON sales_order FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_payment_log_updated_at BEFORE UPDATE ON payment_log FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_expense_updated_at BEFORE UPDATE ON expense FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE OR REPLACE TRIGGER update_warehouse_updated_at BEFORE UPDATE ON warehouse FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE OR REPLACE TRIGGER update_category_updated_at BEFORE UPDATE ON category FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE OR REPLACE TRIGGER update_type_updated_at BEFORE UPDATE ON type FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE OR REPLACE TRIGGER update_supplier_updated_at BEFORE UPDATE ON supplier FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE OR REPLACE TRIGGER update_users_updated_at BEFORE UPDATE ON users FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE OR REPLACE TRIGGER update_customer_updated_at BEFORE UPDATE ON customer FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE OR REPLACE TRIGGER update_product_updated_at BEFORE UPDATE ON product FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE OR REPLACE TRIGGER update_purchase_updated_at BEFORE UPDATE ON purchase FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE OR REPLACE TRIGGER update_purchase_detail_updated_at BEFORE UPDATE ON purchase_detail FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE OR REPLACE TRIGGER update_sale_updated_at BEFORE UPDATE ON sale FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE OR REPLACE TRIGGER update_sales_order_updated_at BEFORE UPDATE ON sales_order FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE OR REPLACE TRIGGER update_payment_log_updated_at BEFORE UPDATE ON payment_log FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE OR REPLACE TRIGGER update_expense_updated_at BEFORE UPDATE ON expense FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
