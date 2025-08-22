@@ -37,8 +37,7 @@ public class Purchase {
     @Column(name = "paid_amount", precision = 10, scale = 2)
     private BigDecimal paidAmount = BigDecimal.ZERO;
 
-    @Lob
-    @Column(name = "receipt_image")
+    @Column(name = "receipt_image", columnDefinition = "bytea")
     private byte[] receiptImage;
 
     @CreationTimestamp
