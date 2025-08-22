@@ -21,9 +21,9 @@ public class GlobalExceptionHandler {
 
 	private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-	@ExceptionHandler(ProductNotFoundException.class)
+	@ExceptionHandler(ResourceNotFoundException.class)
 	@ResponseStatus(HttpStatus.NOT_FOUND)
-	public ResponseEntity<MessageResponse> handleProductNotFoundException(ProductNotFoundException ex) {
+	public ResponseEntity<MessageResponse> handleProductNotFoundException(ResourceNotFoundException ex) {
 		logger.error("Product not found: {}", ex.getMessage());
 		return ResponseEntity.status(HttpStatus.NOT_FOUND)
 				.body(new MessageResponse(ex.getMessage()));
