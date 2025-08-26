@@ -86,6 +86,40 @@ public class ProductService {
 
 	public Product updateProduct(Long id, ProductDto productDto) throws ResourceNotFoundException {
 		Product existingProduct = getProductById(id);
+
+		// Update basic fields
+		existingProduct.setName(productDto.getName());
+		existingProduct.setProductCode(productDto.getProductCode());
+		existingProduct.setStock(productDto.getStock());
+		existingProduct.setUnit(productDto.getUnit());
+		existingProduct.setBuyingPrice(productDto.getBuyingPrice());
+		existingProduct.setSellingPrice(productDto.getSellingPrice());
+		existingProduct.setDate(productDto.getDate() != null ? productDto.getDate() : existingProduct.getDate());
+
+		// Update Category - find or create
+		if (productDto.getCategory() != null) {
+			Category category = findOrCreateCategory(productDto.getCategory());
+			existingProduct.setCategory(category);
+		}
+
+		// Update TypeEntity - find or create
+		if (productDto.getTypeEntity() != null) {
+			Type typeEntity = findOrCreateTypeEntity(productDto.getTypeEntity());
+			existingProduct.setTypeEntity(typeEntity);
+		}
+
+		// Update Warehouse - find or create
+		if (productDto.getWarehouse() != null) {
+			Warehouse warehouse = findOrCreateWarehouse(productDto.getWarehouse());
+			existingProduct.setWarehouse(warehouse);
+		}
+
+		// Update Supplier - find or create
+		if (productDto.getSupplier() != null) {
+			Supplier supplier = findOrCreateSupplier(productDto.getSupplier());
+			existingProduct.setSupplier(supplier);
+		}
+
 		return productRepository.save(existingProduct);
 	}
 
