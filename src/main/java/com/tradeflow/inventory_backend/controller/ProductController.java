@@ -71,4 +71,16 @@ public class ProductController {
 			return ResponseEntity.badRequest().build();
 		}
 	}
+
+	@DeleteMapping("/{id}")
+	public ResponseEntity<MessageResponse> deleteProduct(@PathVariable("id") Long id) {
+		try {
+			productService.deleteProduct(id);
+			return ResponseEntity.ok(new MessageResponse("Product deleted successfully"));
+		} catch (ResourceNotFoundException e) {
+			return ResponseEntity.notFound().build();
+		} catch (Exception e) {
+			return ResponseEntity.badRequest().build();
+		}
+	}
 }
