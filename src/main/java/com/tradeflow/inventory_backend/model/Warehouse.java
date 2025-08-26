@@ -1,5 +1,7 @@
 package com.tradeflow.inventory_backend.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -29,6 +31,7 @@ public class Warehouse {
     private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "warehouse", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonBackReference("product-warehouse")
     private List<Product> products;
 
     // Constructors, getters, and setters

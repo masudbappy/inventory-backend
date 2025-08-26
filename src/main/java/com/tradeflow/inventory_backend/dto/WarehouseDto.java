@@ -6,7 +6,6 @@ public class WarehouseDto {
 	@NotBlank(message = "Warehouse name is required")
 	private String warehouseName;
 
-	@NotBlank(message = "Location is required")
 	private String location;
 
 	public WarehouseDto() {}

@@ -6,10 +6,8 @@ public class SupplierDto {
 	@NotBlank(message = "Supplier name is required")
 	private String name;
 
-	@NotBlank(message = "Contact number is required")
 	private String contactNumber;
 
-	@NotBlank(message = "Address is required")
 	private String address;
 
 	public SupplierDto() {}

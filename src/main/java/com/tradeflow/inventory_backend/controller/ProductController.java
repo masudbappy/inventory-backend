@@ -2,6 +2,7 @@ package com.tradeflow.inventory_backend.controller;
 
 import com.tradeflow.inventory_backend.dto.MessageResponse;
 import com.tradeflow.inventory_backend.dto.ProductDto;
+import com.tradeflow.inventory_backend.dto.output.ProductResponseDto;
 import com.tradeflow.inventory_backend.exception.ResourceNotFoundException;
 import com.tradeflow.inventory_backend.model.Product;
 import com.tradeflow.inventory_backend.service.ProductService;
@@ -34,36 +35,40 @@ public class ProductController {
 	}
 
 	@GetMapping
-	public ResponseEntity<List<Product>> getAllProducts() {
-		List<Product> products = productService.getAllProducts();
+	public ResponseEntity<List<ProductResponseDto>> getAllProducts() {
+		List<ProductResponseDto> products = productService.getAllProducts();
 		return ResponseEntity.ok(products);
 	}
 
 	@GetMapping("/{id}")
-	public ResponseEntity<Product> getProductById(@PathVariable("id") Long id) throws ResourceNotFoundException {
-		Product product = productService.getProductById(id);
-		return ResponseEntity.ok(product);
+	public ResponseEntity<ProductResponseDto> getProductById(@PathVariable("id") Long id) {
+		try {
+			ProductResponseDto product = productService.getProductById(id);
+			return ResponseEntity.ok(product);
+		} catch (ResourceNotFoundException e) {
+			return ResponseEntity.notFound().build();
+		}
 	}
 
 	@PostMapping
-	public ResponseEntity<Product> createProduct(@Valid @RequestBody ProductDto productDto)
-			throws ResourceNotFoundException {
-		Product createdProduct = productService.createProduct(productDto);
-		return ResponseEntity.status(HttpStatus.CREATED).body(createdProduct);
+	public ResponseEntity<ProductResponseDto> createProduct(@RequestBody ProductDto productDto) {
+		try {
+			ProductResponseDto createdProduct = productService.createProduct(productDto);
+			return ResponseEntity.status(HttpStatus.CREATED).body(createdProduct);
+		} catch (Exception e) {
+			return ResponseEntity.badRequest().build();
+		}
 	}
 
 	@PutMapping("/{id}")
-	public ResponseEntity<Product> updateProduct(@PathVariable("id") Long id,
-	                                             @Valid @RequestBody ProductDto productDto)
-			throws ResourceNotFoundException {
-		Product updatedProduct = productService.updateProduct(id, productDto);
-		return ResponseEntity.ok(updatedProduct);
-	}
-
-	@DeleteMapping("/{id}")
-	public ResponseEntity<MessageResponse> deleteProduct(@PathVariable("id") Long id)
-			throws ResourceNotFoundException {
-		productService.deleteProduct(id);
-		return ResponseEntity.ok(new MessageResponse("Product deleted successfully"));
+	public ResponseEntity<ProductResponseDto> updateProduct(@PathVariable("id") Long id, @RequestBody ProductDto productDto) {
+		try {
+			ProductResponseDto updatedProduct = productService.updateProduct(id, productDto);
+			return ResponseEntity.ok(updatedProduct);
+		} catch (ResourceNotFoundException e) {
+			return ResponseEntity.notFound().build();
+		} catch (Exception e) {
+			return ResponseEntity.badRequest().build();
+		}
 	}
 }

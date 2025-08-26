@@ -5,6 +5,11 @@ import com.tradeflow.inventory_backend.dto.ProductDto;
 import com.tradeflow.inventory_backend.dto.SupplierDto;
 import com.tradeflow.inventory_backend.dto.TypeDto;
 import com.tradeflow.inventory_backend.dto.WarehouseDto;
+import com.tradeflow.inventory_backend.dto.output.CategoryResponseDto;
+import com.tradeflow.inventory_backend.dto.output.ProductResponseDto;
+import com.tradeflow.inventory_backend.dto.output.SupplierResponseDto;
+import com.tradeflow.inventory_backend.dto.output.TypeResponseDto;
+import com.tradeflow.inventory_backend.dto.output.WarehouseResponseDto;
 import com.tradeflow.inventory_backend.exception.ResourceNotFoundException;
 import com.tradeflow.inventory_backend.model.Category;
 import com.tradeflow.inventory_backend.model.Product;
@@ -21,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -43,18 +49,12 @@ public class ProductService {
 		this.typeRepository = typeRepository;
 	}
 
-	public List<Product> getAllProducts() {
-		return productRepository.findAll();
-	}
-
-	public Product getProductById(Long id) throws ResourceNotFoundException {
-		return productRepository.findById(id)
-				.orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
-	}
-
-	public Product createProduct(ProductDto productDto) throws ResourceNotFoundException {
+	public ProductResponseDto createProduct(ProductDto productDto) throws ResourceNotFoundException {
+		// Check if product code already exists
+		if (productRepository.existsByProductCode(productDto.getProductCode())) {
+			throw new IllegalArgumentException("Product with code '" + productDto.getProductCode() + "' already exists");
+		}
 		Product product = new Product();
-
 		// Set basic fields
 		product.setName(productDto.getName());
 		product.setProductCode(productDto.getProductCode());
@@ -80,12 +80,17 @@ public class ProductService {
 		Supplier supplier = findOrCreateSupplier(productDto.getSupplier());
 		product.setSupplier(supplier);
 
-		return productRepository.save(product);
-
+		Product savedProduct = productRepository.save(product);
+		return convertToResponseDto(savedProduct);
 	}
 
-	public Product updateProduct(Long id, ProductDto productDto) throws ResourceNotFoundException {
-		Product existingProduct = getProductById(id);
+	public ProductResponseDto updateProduct(Long id, ProductDto productDto) throws ResourceNotFoundException {
+		Product existingProduct = getProductEntityById(id);
+
+		if (!existingProduct.getProductCode().equals(productDto.getProductCode()) &&
+				productRepository.existsByProductCode(productDto.getProductCode())) {
+			throw new IllegalArgumentException("Product with code '" + productDto.getProductCode() + "' already exists");
+		}
 
 		// Update basic fields
 		existingProduct.setName(productDto.getName());
@@ -120,11 +125,12 @@ public class ProductService {
 			existingProduct.setSupplier(supplier);
 		}
 
-		return productRepository.save(existingProduct);
+		Product updatedProduct = productRepository.save(existingProduct);
+		return convertToResponseDto(updatedProduct);
 	}
 
 	public void deleteProduct(Long id) throws ResourceNotFoundException {
-		Product product = getProductById(id);
+		Product product = getProductEntityById(id);
 		productRepository.delete(product);
 	}
 
@@ -167,5 +173,83 @@ public class ProductService {
 					newSupplier.setAddress(supplierDto.getAddress());
 					return supplierRepository.save(newSupplier);
 				});
+	}
+
+	public List<ProductResponseDto> getAllProducts() {
+		List<Product> products = productRepository.findAll();
+		return products.stream()
+				.map(this::convertToResponseDto)
+				.collect(Collectors.toList());
+	}
+
+	public ProductResponseDto getProductById(Long id) throws ResourceNotFoundException {
+		Product product = getProductEntityById(id);
+		return convertToResponseDto(product);
+	}
+
+	private Product getProductEntityById(Long id) throws ResourceNotFoundException {
+		return productRepository.findById(id)
+				.orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
+	}
+
+	private ProductResponseDto convertToResponseDto(Product product) {
+		ProductResponseDto dto = new ProductResponseDto();
+		dto.setProductId(product.getProductId());
+		dto.setName(product.getName());
+		dto.setProductCode(product.getProductCode());
+		dto.setStock(product.getStock());
+		dto.setUnit(product.getUnit());
+		dto.setBuyingPrice(product.getBuyingPrice());
+		dto.setSellingPrice(product.getSellingPrice());
+		dto.setDate(product.getDate());
+
+		if (product.getCategory() != null) {
+			dto.setCategory(convertToCategoryResponseDto(product.getCategory()));
+		}
+
+		if (product.getTypeEntity() != null) {
+			dto.setTypeEntity(convertToTypeResponseDto(product.getTypeEntity()));
+		}
+
+		if (product.getWarehouse() != null) {
+			dto.setWarehouse(convertToWarehouseResponseDto(product.getWarehouse()));
+		}
+
+		if (product.getSupplier() != null) {
+			dto.setSupplier(convertToSupplierResponseDto(product.getSupplier()));
+		}
+
+		return dto;
+	}
+
+	private CategoryResponseDto convertToCategoryResponseDto(Category category) {
+		CategoryResponseDto dto = new CategoryResponseDto();
+		dto.setCategoryId(category.getCategoryId());
+		dto.setName(category.getName());
+		return dto;
+	}
+
+	private TypeResponseDto convertToTypeResponseDto(Type type) {
+		TypeResponseDto dto = new TypeResponseDto();
+		dto.setTypeId(type.getTypeId());
+		dto.setName(type.getName());
+		return dto;
+	}
+
+	private WarehouseResponseDto convertToWarehouseResponseDto(Warehouse warehouse) {
+		WarehouseResponseDto dto = new WarehouseResponseDto();
+		dto.setWarehouseId(warehouse.getWarehouseId());
+		dto.setWarehouseName(warehouse.getWarehouseName());
+		dto.setLocation(warehouse.getLocation());
+		return dto;
+	}
+
+	private SupplierResponseDto convertToSupplierResponseDto(Supplier supplier) {
+		SupplierResponseDto dto = new SupplierResponseDto();
+		dto.setSupplierId(supplier.getSupplierId());
+		dto.setName(supplier.getName());
+		dto.setContactNumber(supplier.getContactNumber());
+		dto.setAddress(supplier.getAddress());
+		return dto;
 	}
 }

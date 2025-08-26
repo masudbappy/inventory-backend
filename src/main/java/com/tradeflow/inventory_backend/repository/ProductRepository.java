@@ -11,6 +11,7 @@ import java.util.List;
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
+    boolean existsByProductCode(String productCode);
     // Use the correct Category primary key property name
     List<Product> findByCategoryCategoryId(Long categoryId);
 

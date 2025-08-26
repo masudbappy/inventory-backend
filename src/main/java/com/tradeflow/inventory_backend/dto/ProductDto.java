@@ -49,7 +49,7 @@ public class ProductDto {
 	@Valid
 	private SupplierDto supplier;
 
-	@JsonFormat(pattern = "dd/MM/yyyy")
+	@JsonFormat(pattern = "yyyy-MM-dd")
 	private LocalDate date;
 
 	// Constructors
