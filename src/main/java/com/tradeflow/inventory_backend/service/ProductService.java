@@ -1,6 +1,10 @@
 package com.tradeflow.inventory_backend.service;
 
+import com.tradeflow.inventory_backend.dto.CategoryDto;
 import com.tradeflow.inventory_backend.dto.ProductDto;
+import com.tradeflow.inventory_backend.dto.SupplierDto;
+import com.tradeflow.inventory_backend.dto.TypeDto;
+import com.tradeflow.inventory_backend.dto.WarehouseDto;
 import com.tradeflow.inventory_backend.exception.ResourceNotFoundException;
 import com.tradeflow.inventory_backend.model.Category;
 import com.tradeflow.inventory_backend.model.Product;
@@ -15,6 +19,7 @@ import com.tradeflow.inventory_backend.repository.WarehouseRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -49,15 +54,38 @@ public class ProductService {
 
 	public Product createProduct(ProductDto productDto) throws ResourceNotFoundException {
 		Product product = new Product();
-		setProductFields(product, productDto);
-		setProductRelationships(product, productDto);
+
+		// Set basic fields
+		product.setName(productDto.getName());
+		product.setProductCode(productDto.getProductCode());
+		product.setStock(productDto.getStock());
+		product.setUnit(productDto.getUnit());
+		product.setBuyingPrice(productDto.getBuyingPrice());
+		product.setSellingPrice(productDto.getSellingPrice());
+		product.setDate(productDto.getDate() != null ? productDto.getDate() : LocalDate.now());
+
+		// Handle Category - find or create
+		Category category = findOrCreateCategory(productDto.getCategory());
+		product.setCategory(category);
+
+		// Handle TypeEntity - find or create
+		Type typeEntity = findOrCreateTypeEntity(productDto.getTypeEntity());
+		product.setTypeEntity(typeEntity);
+
+		// Handle Warehouse - find or create
+		Warehouse warehouse = findOrCreateWarehouse(productDto.getWarehouse());
+		product.setWarehouse(warehouse);
+
+		// Handle Supplier - find or create
+		Supplier supplier = findOrCreateSupplier(productDto.getSupplier());
+		product.setSupplier(supplier);
+
 		return productRepository.save(product);
+
 	}
 
 	public Product updateProduct(Long id, ProductDto productDto) throws ResourceNotFoundException {
 		Product existingProduct = getProductById(id);
-		setProductFields(existingProduct, productDto);
-		setProductRelationships(existingProduct, productDto);
 		return productRepository.save(existingProduct);
 	}
 
@@ -66,44 +94,44 @@ public class ProductService {
 		productRepository.delete(product);
 	}
 
-	private void setProductFields(Product product, ProductDto productDto) {
-		product.setName(productDto.getName());
-		product.setProductCode(productDto.getProductCode());
-		product.setType(productDto.getType());
-		product.setStock(productDto.getStock());
-		product.setBuyingPrice(productDto.getBuyingPrice());
-		product.setSellingPrice(productDto.getSellingPrice());
-		product.setUnit(productDto.getUnit());
-		product.setLowStockThreshold(productDto.getLowStockThreshold());
+	private Category findOrCreateCategory(CategoryDto categoryDto) {
+		return categoryRepository.findByName(categoryDto.getName())
+				.orElseGet(() -> {
+					Category newCategory = new Category();
+					newCategory.setName(categoryDto.getName());
+					return categoryRepository.save(newCategory);
+				});
 	}
 
-	private void setProductRelationships(Product product, ProductDto productDto) throws ResourceNotFoundException {
-		// Handle Category relationship
-		if (productDto.getCategoryId() != null) {
-			Category category = categoryRepository.findById(productDto.getCategoryId())
-					.orElseThrow(() -> new ResourceNotFoundException("Category not found with id: " + productDto.getCategoryId()));
-			product.setCategory(category);
-		}
+	private Type findOrCreateTypeEntity(TypeDto typeDto) {
+		return typeRepository.findByName(typeDto.getName())
+				.orElseGet(() -> {
+					Type newType = new Type();
+					newType.setName(typeDto.getName());
+					return typeRepository.save(newType);
+				});
+	}
 
-		// Handle Supplier relationship
-		if (productDto.getSupplierId() != null) {
-			Supplier supplier = supplierRepository.findById(productDto.getSupplierId())
-					.orElseThrow(() -> new ResourceNotFoundException("Supplier not found with id: " + productDto.getSupplierId()));
-			product.setSupplier(supplier);
-		}
+	private Warehouse findOrCreateWarehouse(WarehouseDto warehouseDto) {
+		return warehouseRepository.findByWarehouseNameAndLocation(
+						warehouseDto.getWarehouseName(), warehouseDto.getLocation())
+				.orElseGet(() -> {
+					Warehouse newWarehouse = new Warehouse();
+					newWarehouse.setWarehouseName(warehouseDto.getWarehouseName());
+					newWarehouse.setLocation(warehouseDto.getLocation());
+					return warehouseRepository.save(newWarehouse);
+				});
+	}
 
-		// Handle Warehouse relationship
-		if (productDto.getWarehouseId() != null) {
-			Warehouse warehouse = warehouseRepository.findById(productDto.getWarehouseId())
-					.orElseThrow(() -> new ResourceNotFoundException("Warehouse not found with id: " + productDto.getWarehouseId()));
-			product.setWarehouse(warehouse);
-		}
-
-		// Handle Type relationship
-		if (productDto.getTypeId() != null) {
-			Type typeEntity = typeRepository.findById(productDto.getTypeId())
-					.orElseThrow(() -> new ResourceNotFoundException("Type not found with id: " + productDto.getTypeId()));
-			product.setTypeEntity(typeEntity);
-		}
+	private Supplier findOrCreateSupplier(SupplierDto supplierDto) {
+		return supplierRepository.findByNameAndContactNumber(
+						supplierDto.getName(), supplierDto.getContactNumber())
+				.orElseGet(() -> {
+					Supplier newSupplier = new Supplier();
+					newSupplier.setName(supplierDto.getName());
+					newSupplier.setContactNumber(supplierDto.getContactNumber());
+					newSupplier.setAddress(supplierDto.getAddress());
+					return supplierRepository.save(newSupplier);
+				});
 	}
 }

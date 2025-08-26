@@ -4,7 +4,9 @@ import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 
 @Entity
@@ -20,9 +22,6 @@ public class Product {
 
     @Column(name = "product_code", unique = true)
     private String productCode;
-
-    @Column(name = "type")
-    private String type;
 
     @Column(name = "stock", precision = 10, scale = 2)
     private BigDecimal stock = BigDecimal.ZERO;
@@ -55,6 +54,9 @@ public class Product {
     @JoinColumn(name = "type_id")
     private Type typeEntity;
 
+    @Column(name = "date")
+    private LocalDate date;
+
     @CreationTimestamp
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -82,9 +84,6 @@ public class Product {
     public String getProductCode() { return productCode; }
     public void setProductCode(String productCode) { this.productCode = productCode; }
 
-    public String getType() { return type; }
-    public void setType(String type) { this.type = type; }
-
     public BigDecimal getStock() { return stock; }
     public void setStock(BigDecimal stock) { this.stock = stock; }
 
@@ -111,6 +110,14 @@ public class Product {
 
     public Type getTypeEntity() { return typeEntity; }
     public void setTypeEntity(Type typeEntity) { this.typeEntity = typeEntity; }
+
+    public LocalDate getDate() {
+        return date;
+    }
+
+    public void setDate(LocalDate date) {
+        this.date = date;
+    }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

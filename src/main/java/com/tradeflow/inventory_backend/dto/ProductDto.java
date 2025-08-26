@@ -1,38 +1,56 @@
 package com.tradeflow.inventory_backend.dto;
-import jakarta.validation.constraints.*;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
+
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 public class ProductDto {
 
 	@NotBlank(message = "Product name is required")
-	@Size(max = 255, message = "Product name must not exceed 255 characters")
 	private String name;
 
-	@Size(max = 100, message = "Product code must not exceed 100 characters")
+	@NotBlank(message = "Product code is required")
 	private String productCode;
 
-	@Size(max = 100, message = "Type must not exceed 100 characters")
-	private String type;
+	@NotNull(message = "Stock is required")
+	@PositiveOrZero(message = "Stock must be positive or zero")
+	private BigDecimal stock;
 
-	@DecimalMin(value = "0.0", inclusive = true, message = "Stock must be non-negative")
-	private BigDecimal stock = BigDecimal.ZERO;
-
-	@DecimalMin(value = "0.0", inclusive = false, message = "Buying price must be greater than 0")
-	private BigDecimal buyingPrice;
-
-	@DecimalMin(value = "0.0", inclusive = false, message = "Selling price must be greater than 0")
-	private BigDecimal sellingPrice;
-
-	@Size(max = 50, message = "Unit must not exceed 50 characters")
+	@NotBlank(message = "Unit is required")
 	private String unit;
 
-	@DecimalMin(value = "0.0", inclusive = true, message = "Low stock threshold must be non-negative")
-	private BigDecimal lowStockThreshold = BigDecimal.ZERO;
+	@NotNull(message = "Category is required")
+	@Valid
+	private CategoryDto category;
 
-	private Long warehouseId;
-	private Long categoryId;
-	private Long supplierId;
-	private Long typeId;
+	@NotNull(message = "Type entity is required")
+	@Valid
+	private TypeDto typeEntity;
+
+	@NotNull(message = "Buying price is required")
+	@Positive(message = "Buying price must be positive")
+	private BigDecimal buyingPrice;
+
+	@NotNull(message = "Selling price is required")
+	@Positive(message = "Selling price must be positive")
+	private BigDecimal sellingPrice;
+
+	@NotNull(message = "Warehouse is required")
+	@Valid
+	private WarehouseDto warehouse;
+
+	@NotNull(message = "Supplier is required")
+	@Valid
+	private SupplierDto supplier;
+
+	@JsonFormat(pattern = "dd/MM/yyyy")
+	private LocalDate date;
 
 	// Constructors
 	public ProductDto() {}
@@ -44,11 +62,17 @@ public class ProductDto {
 	public String getProductCode() { return productCode; }
 	public void setProductCode(String productCode) { this.productCode = productCode; }
 
-	public String getType() { return type; }
-	public void setType(String type) { this.type = type; }
-
 	public BigDecimal getStock() { return stock; }
 	public void setStock(BigDecimal stock) { this.stock = stock; }
+
+	public String getUnit() { return unit; }
+	public void setUnit(String unit) { this.unit = unit; }
+
+	public CategoryDto getCategory() { return category; }
+	public void setCategory(CategoryDto category) { this.category = category; }
+
+	public TypeDto getTypeEntity() { return typeEntity; }
+	public void setTypeEntity(TypeDto typeEntity) { this.typeEntity = typeEntity; }
 
 	public BigDecimal getBuyingPrice() { return buyingPrice; }
 	public void setBuyingPrice(BigDecimal buyingPrice) { this.buyingPrice = buyingPrice; }
@@ -56,21 +80,12 @@ public class ProductDto {
 	public BigDecimal getSellingPrice() { return sellingPrice; }
 	public void setSellingPrice(BigDecimal sellingPrice) { this.sellingPrice = sellingPrice; }
 
-	public String getUnit() { return unit; }
-	public void setUnit(String unit) { this.unit = unit; }
+	public WarehouseDto getWarehouse() { return warehouse; }
+	public void setWarehouse(WarehouseDto warehouse) { this.warehouse = warehouse; }
 
-	public BigDecimal getLowStockThreshold() { return lowStockThreshold; }
-	public void setLowStockThreshold(BigDecimal lowStockThreshold) { this.lowStockThreshold = lowStockThreshold; }
+	public SupplierDto getSupplier() { return supplier; }
+	public void setSupplier(SupplierDto supplier) { this.supplier = supplier; }
 
-	public Long getWarehouseId() { return warehouseId; }
-	public void setWarehouseId(Long warehouseId) { this.warehouseId = warehouseId; }
-
-	public Long getCategoryId() { return categoryId; }
-	public void setCategoryId(Long categoryId) { this.categoryId = categoryId; }
-
-	public Long getSupplierId() { return supplierId; }
-	public void setSupplierId(Long supplierId) { this.supplierId = supplierId; }
-
-	public Long getTypeId() { return typeId; }
-	public void setTypeId(Long typeId) { this.typeId = typeId; }
+	public LocalDate getDate() { return date; }
+	public void setDate(LocalDate date) { this.date = date; }
 }
