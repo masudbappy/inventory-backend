@@ -1,5 +1,6 @@
 package com.tradeflow.inventory_backend.dto.output;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public class CustomerResponseDto {
@@ -7,7 +8,7 @@ public class CustomerResponseDto {
 	private String name;
 	private String phoneNumber;
 	private String address;
-	private Double dueAmount;
+	private BigDecimal dueAmount;
 	private LocalDateTime createdAt;
 	private LocalDateTime updatedAt;
 
@@ -27,8 +28,8 @@ public class CustomerResponseDto {
 	public String getAddress() { return address; }
 	public void setAddress(String address) { this.address = address; }
 
-	public Double getDueAmount() { return dueAmount; }
-	public void setDueAmount(Double dueAmount) { this.dueAmount = dueAmount; }
+	public BigDecimal getDueAmount() { return dueAmount; }
+	public void setDueAmount(BigDecimal dueAmount) { this.dueAmount = dueAmount; }
 
 	public LocalDateTime getCreatedAt() { return createdAt; }
 	public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

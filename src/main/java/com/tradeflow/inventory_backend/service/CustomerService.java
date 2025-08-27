@@ -30,11 +30,13 @@ public class CustomerService {
 		validateUniqueConstraints(customerDto, null);
 
 		Customer customer = new Customer();
+		customer.setCustomerId(customerDto.getCustomerId());
 		customer.setName(customerDto.getName());
 		customer.setContactNumber(customerDto.getPhoneNumber());
 		customer.setAddress(customerDto.getAddress());
-		customer.setCreatedAt(LocalDateTime.now());
-		customer.setUpdatedAt(LocalDateTime.now());
+		customer.setDueAmount(customerDto.getDueAmount());
+		customer.setCreatedAt(customerDto.getCreatedAt());
+		customer.setUpdatedAt(customerDto.getUpdatedAt());
 
 		Customer savedCustomer = customerRepository.save(customer);
 		return convertToResponseDto(savedCustomer);
@@ -76,7 +78,7 @@ public class CustomerService {
 				Sort.by(sortBy).ascending();
 
 		Pageable pageable = PageRequest.of(page, size, sort);
-		Page<Customer> customerPage = customerRepository.searchByNameEmailOrPhone(query, pageable);
+		Page<Customer> customerPage = customerRepository.searchByNameOrPhone(query, pageable);
 
 		return customerPage.map(this::convertToResponseDto);
 	}
@@ -88,16 +90,7 @@ public class CustomerService {
 
 	private void validateUniqueConstraints(CustomerDto customerDto, Long excludeId) {
 		if (customerDto.getPhoneNumber() != null && !customerDto.getPhoneNumber().isEmpty()) {
-			customerRepository.findByEmail(customerDto.getPhoneNumber())
-					.ifPresent(customer -> {
-						if (excludeId == null || !customer.getCustomerId().equals(excludeId)) {
-							throw new IllegalArgumentException("Customer with phone no '" + customerDto.getPhoneNumber() + "' already exists");
-						}
-					});
-		}
-
-		if (customerDto.getPhoneNumber() != null && !customerDto.getPhoneNumber().isEmpty()) {
-			customerRepository.findByPhoneNumber(customerDto.getPhoneNumber())
+			customerRepository.findByContactNumber(customerDto.getPhoneNumber())
 					.ifPresent(customer -> {
 						if (excludeId == null || !customer.getCustomerId().equals(excludeId)) {
 							throw new IllegalArgumentException("Customer with phone number '" + customerDto.getPhoneNumber() + "' already exists");
@@ -112,6 +105,7 @@ public class CustomerService {
 		dto.setName(customer.getName());
 		dto.setPhoneNumber(customer.getContactNumber());
 		dto.setAddress(customer.getAddress());
+		dto.setDueAmount(customer.getDueAmount());
 		dto.setCreatedAt(customer.getCreatedAt());
 		dto.setUpdatedAt(customer.getUpdatedAt());
 		return dto;

@@ -13,17 +13,10 @@ import java.util.Optional;
 @Repository
 public interface CustomerRepository extends JpaRepository<Customer, Long> {
 
-	Optional<Customer> findByEmail(String email);
-
-	Optional<Customer> findByPhoneNumber(String phoneNumber);
-
-	boolean existsByEmail(String email);
-
-	boolean existsByPhoneNumber(String phoneNumber);
+	Optional<Customer> findByContactNumber(String contactNumber);
 
 	@Query("SELECT c FROM Customer c WHERE " +
 			"LOWER(c.name) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
-			"LOWER(c.email) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
-			"c.phoneNumber LIKE CONCAT('%', :query, '%')")
-	Page<Customer> searchByNameEmailOrPhone(@Param("query") String query, Pageable pageable);
+			"c.contactNumber LIKE CONCAT('%', :query, '%')")
+	Page<Customer> searchByNameOrPhone(@Param("query") String query, Pageable pageable);
 }

@@ -26,7 +26,7 @@ public class Customer {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_status")
-    private PaymentStatus paymentStatus = PaymentStatus.UNPAID;
+    private PaymentStatus paymentStatus = PaymentStatus.NONE;
 
     @Column(name = "due_amount", precision = 10, scale = 2)
     private BigDecimal dueAmount = BigDecimal.ZERO;
