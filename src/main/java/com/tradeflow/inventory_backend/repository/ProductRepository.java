@@ -1,6 +1,8 @@
 package com.tradeflow.inventory_backend.repository;
 
 import com.tradeflow.inventory_backend.model.Product;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -41,4 +43,9 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     @Query("SELECT p FROM Product p WHERE p.stock <= p.lowStockThreshold")
     List<Product> findLowStockProducts();
+
+    @Query("SELECT p FROM Product p WHERE " +
+            "LOWER(p.name) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+            "LOWER(p.productCode) LIKE LOWER(CONCAT('%', :query, '%'))")
+    Page<Product> searchByNameOrProductCode(@Param("query") String query, Pageable pageable);
 }
