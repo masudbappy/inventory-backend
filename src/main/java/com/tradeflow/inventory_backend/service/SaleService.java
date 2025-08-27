@@ -1,3 +1,4 @@
+/*
 package com.tradeflow.inventory_backend.service;
 
 import com.tradeflow.inventory_backend.dto.CreateSaleDto;
@@ -199,4 +200,4 @@ public class SaleService {
 		dto.setTotalPrice(salesOrder.getTotalPrice());
 		return dto;
 	}
-}
+}*/

@@ -1,3 +1,4 @@
+/*
 package com.tradeflow.inventory_backend.controller;
 
 import com.tradeflow.inventory_backend.dto.CreateSaleDto;
@@ -62,4 +63,4 @@ public class SaleController {
 		Page<SaleResponseDto> sales = saleService.searchSales(query, page, size, sortBy, sortDir);
 		return ResponseEntity.ok(sales);
 	}
-}
+}*/

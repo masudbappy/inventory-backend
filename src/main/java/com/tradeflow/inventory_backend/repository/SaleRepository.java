@@ -14,7 +14,7 @@ import java.util.Optional;
 
 @Repository
 public interface SaleRepository extends JpaRepository<Sale, Long> {
-
+/*
 	List<Sale> findByCustomer_CustomerId(Long customerId);
 
 	Page<Sale> findByCustomer_CustomerId(Long customerId, Pageable pageable);
@@ -31,5 +31,5 @@ public interface SaleRepository extends JpaRepository<Sale, Long> {
 	Page<Sale> searchSales(@Param("query") String query, Pageable pageable);
 
 	@Query("SELECT COUNT(s) FROM Sale s WHERE DATE(s.saleDate) = CURRENT_DATE")
-	Long getTodaySalesCount();
+	Long getTodaySalesCount();*/
 }
