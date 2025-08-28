@@ -1,4 +1,3 @@
-/*
 package com.tradeflow.inventory_backend.service;
 
 import com.tradeflow.inventory_backend.dto.CreateSaleDto;
@@ -6,15 +5,21 @@ import com.tradeflow.inventory_backend.dto.SaleItemDto;
 import com.tradeflow.inventory_backend.dto.output.SaleItemResponseDto;
 import com.tradeflow.inventory_backend.dto.output.SaleResponseDto;
 import com.tradeflow.inventory_backend.exception.ResourceNotFoundException;
-import com.tradeflow.inventory_backend.model.*;
-import com.tradeflow.inventory_backend.repository.*;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import com.tradeflow.inventory_backend.model.Customer;
+import com.tradeflow.inventory_backend.model.PaymentLog;
+import com.tradeflow.inventory_backend.model.PaymentStatus;
+import com.tradeflow.inventory_backend.model.Product;
+import com.tradeflow.inventory_backend.model.Sale;
+import com.tradeflow.inventory_backend.model.SalesOrder;
+import com.tradeflow.inventory_backend.repository.CustomerRepository;
+import com.tradeflow.inventory_backend.repository.PaymentLogRepository;
+import com.tradeflow.inventory_backend.repository.ProductRepository;
+import com.tradeflow.inventory_backend.repository.SaleRepository;
+import com.tradeflow.inventory_backend.repository.SalesOrderRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -40,7 +45,7 @@ public class SaleService {
 		this.paymentLogRepository = paymentLogRepository;
 	}
 
-	public SaleResponseDto createSale(CreateSaleDto createSaleDto) {
+	public SaleResponseDto createSale(CreateSaleDto createSaleDto) throws ResourceNotFoundException {
 		// Validate customer
 		Customer customer = customerRepository.findById(createSaleDto.getCustomerId())
 				.orElseThrow(() -> new ResourceNotFoundException("Customer not found with id: " + createSaleDto.getCustomerId()));
@@ -48,46 +53,40 @@ public class SaleService {
 		// Create sale
 		Sale sale = new Sale();
 		sale.setSaleCode(generateSaleCode());
-		sale.setCustomer(customer);
-		sale.setDate(LocalDateTime.now());
-		sale.setCreatedAt(LocalDateTime.now());
-		sale.setUpdatedAt(LocalDateTime.now());
-		sale.setNotes(createSaleDto.getNotes());
-
+		sale.setDate(createSaleDto.getDate());
 		// Calculate totals
-		double totalAmount = 0.0;
-		for (SaleItemDto item : createSaleDto.getSaleItems()) {
-			double itemTotal = (item.getQuantity() * item.getUnitPrice()) - item.getDiscount();
-			totalAmount += itemTotal;
+		BigDecimal totalAmount = BigDecimal.valueOf(0.0);
+		for (SaleItemDto item : createSaleDto.getSalesOrders()) {
+			BigDecimal itemTotal = (item.getQuantity().multiply(item.getSellingPrice())).subtract(createSaleDto.getDiscountAmount());
+			totalAmount.add(itemTotal);
 		}
-
-		sale.setTotalAmount(totalAmount);
-		sale.setTotalDiscount(createSaleDto.getTotalDiscount());
-		sale.setTax(createSaleDto.getTax());
-
-		double netAmount = totalAmount - createSaleDto.getTotalDiscount() + createSaleDto.getTax();
-		sale.setNetAmount(netAmount);
+		sale.setDiscountAmount(createSaleDto.getDiscountAmount());
+		sale.setLaborCost(createSaleDto.getLaborCost());
+		BigDecimal netAmount = totalAmount.subtract(createSaleDto.getDiscountAmount());
+		netAmount = netAmount.add(createSaleDto.getLaborCost());
+		sale.setTotalPrice(netAmount);
 		sale.setPaidAmount(createSaleDto.getPaidAmount());
-		sale.setDueAmount(netAmount - createSaleDto.getPaidAmount());
-
+		BigDecimal previousDue = customer.getDueAmount() != null ? customer.getDueAmount() : BigDecimal.ZERO;
+		BigDecimal newDueAmount = previousDue.add(netAmount).subtract(createSaleDto.getPaidAmount());
+		sale.setCustomer(customer);
 		// Determine payment status
-		if (sale.getDueAmount() <= 0) {
-			sale.setPaymentStatus(PaymentStatus.PAID);
-		} else if (sale.getPaidAmount() > 0) {
-			sale.setPaymentStatus(PaymentStatus.PARTIAL);
+		if (previousDue.compareTo(BigDecimal.ZERO) <= 0) {
+			customer.setPaymentStatus(PaymentStatus.PAID);
+		} else if (sale.getPaidAmount().compareTo(BigDecimal.ZERO) > 0) {
+			customer.setPaymentStatus(PaymentStatus.PARTIAL);
 		} else {
-			sale.setPaymentStatus(PaymentStatus.PENDING);
+			customer.setPaymentStatus(PaymentStatus.NONE);
 		}
 
 		Sale savedSale = saleRepository.save(sale);
 
 		// Create sale items (SalesOrder)
-		for (SaleItemDto itemDto : createSaleDto.getSaleItems()) {
+		for (SaleItemDto itemDto : createSaleDto.getSalesOrders()) {
 			Product product = productRepository.findById(itemDto.getProductId())
 					.orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + itemDto.getProductId()));
 
 			// Check stock availability
-			if (product.getStockQuantity() < itemDto.getQuantity()) {
+			if ((product.getStock().compareTo(itemDto.getQuantity()) < 0)) {
 				throw new IllegalArgumentException("Insufficient stock for product: " + product.getName());
 			}
 
@@ -95,36 +94,32 @@ public class SaleService {
 			salesOrder.setSale(savedSale);
 			salesOrder.setProduct(product);
 			salesOrder.setQuantity(itemDto.getQuantity());
-			salesOrder.setUnitPrice(itemDto.getUnitPrice());
-			salesOrder.setDiscount(itemDto.getDiscount());
-			salesOrder.setTotalPrice((itemDto.getQuantity() * itemDto.getUnitPrice()) - itemDto.getDiscount());
-
+			salesOrder.setRate(itemDto.getSellingPrice());
 			salesOrderRepository.save(salesOrder);
 
 			// Update product stock
-			product.setStockQuantity(product.getStockQuantity() - itemDto.getQuantity());
+			product.setStock(product.getStock().subtract(itemDto.getQuantity()));
 			productRepository.save(product);
 		}
 
 		// Create payment log if paid amount > 0
-		if (createSaleDto.getPaidAmount() > 0) {
+		if (createSaleDto.getPaidAmount().compareTo(BigDecimal.ZERO) > 0) {
 			PaymentLog paymentLog = new PaymentLog();
 			paymentLog.setSale(savedSale);
-			paymentLog.setAmount(createSaleDto.getPaidAmount());
-			paymentLog.setPaymentMethod(createSaleDto.getPaymentMethod());
-			paymentLog.setPaymentDate(LocalDateTime.now());
-			paymentLog.setCreatedAt(LocalDateTime.now());
+			paymentLog.setPaymentAmount(createSaleDto.getPaidAmount());
+			paymentLog.setDate(createSaleDto.getDate());
 			paymentLogRepository.save(paymentLog);
 		}
 
 		// Update customer due amount
-		customer.setDueAmount((customer.getDueAmount() != null ? customer.getDueAmount() : 0.0) + sale.getDueAmount());
+		customer.setPaymentStatus(createSaleDto.getPaymentStatus());
+		customer.setDueAmount(newDueAmount);
 		customerRepository.save(customer);
 
-		return convertToResponseDto(savedSale);
+		return convertToResponseDto(savedSale, customer);
 	}
 
-	public SaleResponseDto getSaleById(Long id) {
+	/*public SaleResponseDto getSaleById(Long id) {
 		Sale sale = saleRepository.findById(id)
 				.orElseThrow(() -> new ResourceNotFoundException("Sale not found with id: " + id));
 		return convertToResponseDto(sale);
@@ -155,7 +150,7 @@ public class SaleService {
 		Page<Sale> salePage = saleRepository.findAll(pageable);
 
 		return salePage.map(this::convertToResponseDto);
-	}
+	}*/
 
 	private String generateSaleCode() {
 		String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
@@ -163,27 +158,22 @@ public class SaleService {
 		return "SALE-" + timestamp + "-" + String.format("%03d", count);
 	}
 
-	private SaleResponseDto convertToResponseDto(Sale sale) {
+	private SaleResponseDto convertToResponseDto(Sale sale, Customer customer) {
 		SaleResponseDto dto = new SaleResponseDto();
 		dto.setSaleId(sale.getSaleId());
 		dto.setSaleCode(sale.getSaleCode());
 		dto.setCustomerId(sale.getCustomer().getCustomerId());
 		dto.setCustomerName(sale.getCustomer().getName());
-		dto.setTotalAmount(sale.getTotalPrice());
-		dto.setTotalDiscount(sale.getTotalDiscount());
-		dto.setTax(sale.getTax());
-		dto.setNetAmount(sale.getNetAmount());
+		dto.setTotalPrice(sale.getTotalPrice());
 		dto.setPaidAmount(sale.getPaidAmount());
-		dto.setDueAmount(sale.getDueAmount());
-		dto.setPaymentStatus(sale.getPaymentStatus().toString());
-		dto.setNotes(sale.getNotes());
-		dto.setSaleDate(sale.getSaleDate());
+		dto.setDueAmount(customer.getDueAmount());
+		dto.setDate(sale.getDate());
 		dto.setCreatedAt(sale.getCreatedAt());
 
 		// Get sale items
 		List<SalesOrder> salesOrders = salesOrderRepository.findBySale_SaleId(sale.getSaleId());
 		List<SaleItemResponseDto> saleItems = salesOrders.stream().map(this::convertToSaleItemDto).collect(Collectors.toList());
-		dto.setSaleItems(saleItems);
+		dto.setSalesOrders(saleItems);
 
 		return dto;
 	}
@@ -195,9 +185,7 @@ public class SaleService {
 		dto.setProductName(salesOrder.getProduct().getName());
 		dto.setProductCode(salesOrder.getProduct().getProductCode());
 		dto.setQuantity(salesOrder.getQuantity());
-		dto.setUnitPrice(salesOrder.getUnitPrice());
-		dto.setDiscount(salesOrder.getDiscount());
-		dto.setTotalPrice(salesOrder.getTotalPrice());
+		dto.setRate(salesOrder.getRate());
 		return dto;
 	}
-}*/
+}

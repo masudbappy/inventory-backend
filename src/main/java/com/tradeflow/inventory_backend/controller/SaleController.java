@@ -1,20 +1,23 @@
-/*
 package com.tradeflow.inventory_backend.controller;
 
 import com.tradeflow.inventory_backend.dto.CreateSaleDto;
 import com.tradeflow.inventory_backend.dto.output.SaleResponseDto;
+import com.tradeflow.inventory_backend.exception.ResourceNotFoundException;
 import com.tradeflow.inventory_backend.service.SaleService;
 import jakarta.validation.Valid;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/sales")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = {"http://localhost:3000", "http://127.0.0.1:3000"})
+@PreAuthorize("hasRole('ADMIN')")
 public class SaleController {
 
 	private final SaleService saleService;
@@ -24,12 +27,13 @@ public class SaleController {
 	}
 
 	@PostMapping
-	public ResponseEntity<SaleResponseDto> createSale(@Valid @RequestBody CreateSaleDto createSaleDto) {
+	public ResponseEntity<SaleResponseDto> createSale(@Valid @RequestBody CreateSaleDto createSaleDto)
+			throws ResourceNotFoundException {
 		SaleResponseDto sale = saleService.createSale(createSaleDto);
 		return new ResponseEntity<>(sale, HttpStatus.CREATED);
 	}
 
-	@GetMapping("/{id}")
+	/*@GetMapping("/{id}")
 	public ResponseEntity<SaleResponseDto> getSaleById(@PathVariable Long id) {
 		SaleResponseDto sale = saleService.getSaleById(id);
 		return ResponseEntity.ok(sale);
@@ -62,5 +66,5 @@ public class SaleController {
 
 		Page<SaleResponseDto> sales = saleService.searchSales(query, page, size, sortBy, sortDir);
 		return ResponseEntity.ok(sales);
-	}
-}*/
+	}*/
+}
