@@ -46,6 +46,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     @Query("SELECT p FROM Product p WHERE " +
             "LOWER(p.name) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
-            "LOWER(p.productCode) LIKE LOWER(CONCAT('%', :query, '%'))")
-    Page<Product> searchByNameOrProductCode(@Param("query") String query, Pageable pageable);
+            "LOWER(p.productCode) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+            "LOWER(p.typeEntity.name) LIKE LOWER(CONCAT('%', :query, '%'))")
+    Page<Product> searchByNameOrProductCodeOrType(@Param("query") String query, Pageable pageable);
 }

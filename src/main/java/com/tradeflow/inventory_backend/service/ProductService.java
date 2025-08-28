@@ -263,7 +263,7 @@ public class ProductService {
 				Sort.by(sortBy).ascending();
 
 		Pageable pageable = PageRequest.of(page, size, sort);
-		Page<Product> productPage = productRepository.searchByNameOrProductCode(query, pageable);
+		Page<Product> productPage = productRepository.searchByNameOrProductCodeOrType(query, pageable);
 
 		return productPage.map(this::convertToResponseDto);
 	}
