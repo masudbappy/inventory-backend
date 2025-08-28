@@ -1,6 +1,7 @@
 package com.tradeflow.inventory_backend.dto.output;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -9,17 +10,17 @@ public class SaleResponseDto {
 	private String saleCode;
 	private Long customerId;
 	private String customerName;
-	private BigDecimal totalAmount;
-	private BigDecimal totalDiscount;
-	private BigDecimal netAmount;
+	private String customerContactNumber;
+	private LocalDate date;
+	private BigDecimal totalPrice;
 	private BigDecimal paidAmount;
-	private BigDecimal dueAmount;
-	private String paymentStatus;
-	private String paymentMethod;
-	private String notes;
-	private LocalDateTime saleDate;
+	private BigDecimal dueAmount; // Calculated: totalPrice - paidAmount
+	private BigDecimal laborCost;
+	private BigDecimal discountAmount;
 	private LocalDateTime createdAt;
-	private List<SaleItemResponseDto> saleItems;
+	private LocalDateTime updatedAt;
+	private List<SaleItemResponseDto> salesOrders;
+	private List<PaymentLogResponseDto> paymentLogs;
 
 	// Constructors
 	public SaleResponseDto() {}
@@ -28,8 +29,13 @@ public class SaleResponseDto {
 	public Long getSaleId() { return saleId; }
 	public void setSaleId(Long saleId) { this.saleId = saleId; }
 
-	public String getSaleCode() { return saleCode; }
-	public void setSaleCode(String saleCode) { this.saleCode = saleCode; }
+	public String getSaleCode() {
+		return saleCode;
+	}
+
+	public void setSaleCode(String saleCode) {
+		this.saleCode = saleCode;
+	}
 
 	public Long getCustomerId() { return customerId; }
 	public void setCustomerId(Long customerId) { this.customerId = customerId; }
@@ -37,15 +43,14 @@ public class SaleResponseDto {
 	public String getCustomerName() { return customerName; }
 	public void setCustomerName(String customerName) { this.customerName = customerName; }
 
-	public BigDecimal getTotalAmount() { return totalAmount; }
-	public void setTotalAmount(BigDecimal totalAmount) { this.totalAmount = totalAmount; }
+	public String getCustomerContactNumber() { return customerContactNumber; }
+	public void setCustomerContactNumber(String customerContactNumber) { this.customerContactNumber = customerContactNumber; }
 
-	public BigDecimal getTotalDiscount() { return totalDiscount; }
-	public void setTotalDiscount(BigDecimal totalDiscount) { this.totalDiscount = totalDiscount; }
+	public LocalDate getDate() { return date; }
+	public void setDate(LocalDate date) { this.date = date; }
 
-
-	public BigDecimal getNetAmount() { return netAmount; }
-	public void setNetAmount(BigDecimal netAmount) { this.netAmount = netAmount; }
+	public BigDecimal getTotalPrice() { return totalPrice; }
+	public void setTotalPrice(BigDecimal totalPrice) { this.totalPrice = totalPrice; }
 
 	public BigDecimal getPaidAmount() { return paidAmount; }
 	public void setPaidAmount(BigDecimal paidAmount) { this.paidAmount = paidAmount; }
@@ -53,21 +58,21 @@ public class SaleResponseDto {
 	public BigDecimal getDueAmount() { return dueAmount; }
 	public void setDueAmount(BigDecimal dueAmount) { this.dueAmount = dueAmount; }
 
-	public String getPaymentStatus() { return paymentStatus; }
-	public void setPaymentStatus(String paymentStatus) { this.paymentStatus = paymentStatus; }
+	public BigDecimal getLaborCost() { return laborCost; }
+	public void setLaborCost(BigDecimal laborCost) { this.laborCost = laborCost; }
 
-	public String getPaymentMethod() { return paymentMethod; }
-	public void setPaymentMethod(String paymentMethod) { this.paymentMethod = paymentMethod; }
-
-	public String getNotes() { return notes; }
-	public void setNotes(String notes) { this.notes = notes; }
-
-	public LocalDateTime getSaleDate() { return saleDate; }
-	public void setSaleDate(LocalDateTime saleDate) { this.saleDate = saleDate; }
+	public BigDecimal getDiscountAmount() { return discountAmount; }
+	public void setDiscountAmount(BigDecimal discountAmount) { this.discountAmount = discountAmount; }
 
 	public LocalDateTime getCreatedAt() { return createdAt; }
 	public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
-	public List<SaleItemResponseDto> getSaleItems() { return saleItems; }
-	public void setSaleItems(List<SaleItemResponseDto> saleItems) { this.saleItems = saleItems; }
+	public LocalDateTime getUpdatedAt() { return updatedAt; }
+	public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+
+	public List<SaleItemResponseDto> getSalesOrders() { return salesOrders; }
+	public void setSalesOrders(List<SaleItemResponseDto> salesOrders) { this.salesOrders = salesOrders; }
+
+	public List<PaymentLogResponseDto> getPaymentLogs() { return paymentLogs; }
+	public void setPaymentLogs(List<PaymentLogResponseDto> paymentLogs) { this.paymentLogs = paymentLogs; }
 }

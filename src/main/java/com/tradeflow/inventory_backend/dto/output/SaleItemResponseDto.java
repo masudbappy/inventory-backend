@@ -1,14 +1,18 @@
 package com.tradeflow.inventory_backend.dto.output;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
 public class SaleItemResponseDto {
 	private Long salesOrderId;
 	private Long productId;
 	private String productName;
 	private String productCode;
-	private Integer quantity;
-	private Double unitPrice;
-	private Double discount;
-	private Double totalPrice;
+	private BigDecimal quantity;
+	private BigDecimal rate;
+	private BigDecimal totalAmount; // Calculated: quantity * rate
+	private LocalDateTime createdAt;
+	private LocalDateTime updatedAt;
 
 	// Constructors
 	public SaleItemResponseDto() {}
@@ -26,15 +30,18 @@ public class SaleItemResponseDto {
 	public String getProductCode() { return productCode; }
 	public void setProductCode(String productCode) { this.productCode = productCode; }
 
-	public Integer getQuantity() { return quantity; }
-	public void setQuantity(Integer quantity) { this.quantity = quantity; }
+	public BigDecimal getQuantity() { return quantity; }
+	public void setQuantity(BigDecimal quantity) { this.quantity = quantity; }
 
-	public Double getUnitPrice() { return unitPrice; }
-	public void setUnitPrice(Double unitPrice) { this.unitPrice = unitPrice; }
+	public BigDecimal getRate() { return rate; }
+	public void setRate(BigDecimal rate) { this.rate = rate; }
 
-	public Double getDiscount() { return discount; }
-	public void setDiscount(Double discount) { this.discount = discount; }
+	public BigDecimal getTotalAmount() { return totalAmount; }
+	public void setTotalAmount(BigDecimal totalAmount) { this.totalAmount = totalAmount; }
 
-	public Double getTotalPrice() { return totalPrice; }
-	public void setTotalPrice(Double totalPrice) { this.totalPrice = totalPrice; }
+	public LocalDateTime getCreatedAt() { return createdAt; }
+	public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+	public LocalDateTime getUpdatedAt() { return updatedAt; }
+	public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 }
