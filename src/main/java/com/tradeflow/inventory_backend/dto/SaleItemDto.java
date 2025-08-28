@@ -1,37 +1,28 @@
 package com.tradeflow.inventory_backend.dto;
 
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
-
 import java.math.BigDecimal;
 
 public class SaleItemDto {
-	@NotNull(message = "Product ID is required")
-	private Long productId;
+    private ProductDto productDto;
+    private BigDecimal quantity;
 
-	@Positive(message = "Quantity must be positive")
-	private BigDecimal quantity;
+    public SaleItemDto(ProductDto productDto) {
+        this.productDto = productDto;
+    }
 
-	@Positive(message = "Unit price must be positive")
-	private BigDecimal sellingPrice;
+    public ProductDto getProductDto() {
+        return productDto;
+    }
 
-	// Constructors
-	public SaleItemDto() {
-	}
+    public void setProductDto(ProductDto productDto) {
+        this.productDto = productDto;
+    }
 
-	public SaleItemDto(Long productId, BigDecimal quantity, BigDecimal sellingPrice) {
-		this.productId = productId;
-		this.quantity = quantity;
-		this.sellingPrice = sellingPrice;
-	}
+    public BigDecimal getQuantity() {
+        return quantity;
+    }
 
-	// Getters and Setters
-	public Long getProductId() { return productId; }
-	public void setProductId(Long productId) { this.productId = productId; }
-
-	public BigDecimal getQuantity() { return quantity; }
-	public void setQuantity(BigDecimal quantity) { this.quantity = quantity; }
-
-	public BigDecimal getSellingPrice() { return sellingPrice; }
-	public void setSellingPrice(BigDecimal sellingPrice) { this.sellingPrice = sellingPrice; }
+    public void setQuantity(BigDecimal quantity) {
+        this.quantity = quantity;
+    }
 }

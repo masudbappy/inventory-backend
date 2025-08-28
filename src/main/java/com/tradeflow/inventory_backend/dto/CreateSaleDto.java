@@ -1,74 +1,59 @@
 package com.tradeflow.inventory_backend.dto;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.tradeflow.inventory_backend.model.PaymentStatus;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.PositiveOrZero;
+import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
 public class CreateSaleDto {
-	@NotNull(message = "Customer ID is required")
-	private Long customerId;
 
-	private Long userId; // Optional, can be set from authentication context
+	@Valid
+	@NotNull(message = "Customer information is required")
+	private CustomerSaleDto customer;
 
-	@JsonFormat(pattern = "yyyy-MM-dd")
+	@NotNull(message = "Sale date is required")
 	private LocalDate date;
 
-	@NotEmpty(message = "Sale items are required")
 	@Valid
-	private List<SaleItemDto> salesOrders;
+	@NotEmpty(message = "At least one product is required")
+	private List<ProductSaleDto> products;
 
-	@PositiveOrZero(message = "Paid amount cannot be negative")
-	private BigDecimal paidAmount = BigDecimal.ZERO;
+	@DecimalMin(value = "0.0", message = "Discount must be non-negative")
+	private BigDecimal discount = BigDecimal.ZERO;
 
-	@PositiveOrZero(message = "Labor cost cannot be negative")
+	@DecimalMin(value = "0.0", message = "Labor cost must be non-negative")
 	private BigDecimal laborCost = BigDecimal.ZERO;
 
-	@PositiveOrZero(message = "Discount amount cannot be negative")
-	private BigDecimal discountAmount = BigDecimal.ZERO;
+	@NotNull(message = "Amount paid is required")
+	@DecimalMin(value = "0.0", message = "Amount paid must be non-negative")
+	private BigDecimal amountPaid;
 
-	// Payment log details (optional)
-	private PaymentStatus paymentStatus;
+	@NotBlank(message = "Payment method is required")
 	private String paymentMethod;
 
 	// Constructors
 	public CreateSaleDto() {}
 
-	// Getters and Setters
-	public Long getCustomerId() { return customerId; }
-	public void setCustomerId(Long customerId) { this.customerId = customerId; }
-
-	public Long getUserId() { return userId; }
-	public void setUserId(Long userId) { this.userId = userId; }
+	// Getters and setters
+	public CustomerSaleDto getCustomer() { return customer; }
+	public void setCustomer(CustomerSaleDto customer) { this.customer = customer; }
 
 	public LocalDate getDate() { return date; }
 	public void setDate(LocalDate date) { this.date = date; }
 
-	public List<SaleItemDto> getSalesOrders() { return salesOrders; }
-	public void setSalesOrders(List<SaleItemDto> salesOrders) { this.salesOrders = salesOrders; }
+	public List<ProductSaleDto> getProducts() { return products; }
+	public void setProducts(List<ProductSaleDto> products) { this.products = products; }
 
-	public BigDecimal getPaidAmount() { return paidAmount; }
-	public void setPaidAmount(BigDecimal paidAmount) { this.paidAmount = paidAmount; }
+	public BigDecimal getDiscount() { return discount; }
+	public void setDiscount(BigDecimal discount) { this.discount = discount; }
 
 	public BigDecimal getLaborCost() { return laborCost; }
 	public void setLaborCost(BigDecimal laborCost) { this.laborCost = laborCost; }
 
-	public BigDecimal getDiscountAmount() { return discountAmount; }
-	public void setDiscountAmount(BigDecimal discountAmount) { this.discountAmount = discountAmount; }
+	public BigDecimal getAmountPaid() { return amountPaid; }
+	public void setAmountPaid(BigDecimal amountPaid) { this.amountPaid = amountPaid; }
 
-	public PaymentStatus getPaymentStatus() { return paymentStatus; }
-	public void setPaymentStatus(PaymentStatus paymentStatus) { this.paymentStatus = paymentStatus; }
-
-	public String getPaymentMethod() {
-		return paymentMethod;
-	}
-
-	public void setPaymentMethod(String paymentMethod) {
-		this.paymentMethod = paymentMethod;
-	}
+	public String getPaymentMethod() { return paymentMethod; }
+	public void setPaymentMethod(String paymentMethod) { this.paymentMethod = paymentMethod; }
 }

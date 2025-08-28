@@ -25,8 +25,10 @@ public class SalesOrder {
     @Column(name = "quantity", precision = 10, scale = 2, nullable = false)
     private BigDecimal quantity;
 
-    @Column(name = "rate", precision = 10, scale = 2, nullable = false)
-    private BigDecimal rate;
+    @Column(name = "selling_price", precision = 10, scale = 2, nullable = false)
+    private BigDecimal sellingPrice;
+    @Column(name = "total_price", precision = 10, scale = 2, nullable = false)
+    private BigDecimal totalPrice;
 
     @CreationTimestamp
     @Column(name = "created_at")
@@ -51,8 +53,16 @@ public class SalesOrder {
     public BigDecimal getQuantity() { return quantity; }
     public void setQuantity(BigDecimal quantity) { this.quantity = quantity; }
 
-    public BigDecimal getRate() { return rate; }
-    public void setRate(BigDecimal rate) { this.rate = rate; }
+    public BigDecimal getSellingPrice() { return sellingPrice; }
+    public void setSellingPrice(BigDecimal rate) { this.sellingPrice = rate; }
+
+    public BigDecimal getTotalPrice() {
+        return totalPrice;
+    }
+
+    public void setTotalPrice(BigDecimal totalPrice) {
+        this.totalPrice = totalPrice;
+    }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
