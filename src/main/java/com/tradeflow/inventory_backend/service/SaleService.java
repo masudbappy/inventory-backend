@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class SaleService {
@@ -39,12 +40,9 @@ public class SaleService {
 		// 2. Update customer info from request
 		customer.setContactNumber(createSaleDto.getCustomer().getPhone());
 		customer.setAddress(createSaleDto.getCustomer().getAddress());
-		customer.setDueAmount(createSaleDto.getCustomer().getDueAmount());
-		customerRepository.save(customer);
 
 		// 3. Create Sale entity
 		Sale sale = new Sale();
-		sale.setCustomer(customer);
 		sale.setDate(createSaleDto.getDate());
 		sale.setDiscountAmount(createSaleDto.getDiscount());
 		sale.setLaborCost(createSaleDto.getLaborCost());
@@ -62,7 +60,15 @@ public class SaleService {
 		// Add labor cost and subtract discount
 		totalPrice = totalPrice.add(createSaleDto.getLaborCost()).subtract(createSaleDto.getDiscount());
 		sale.setTotalPrice(totalPrice);
-
+		// Update customer's due amount
+		BigDecimal dueAmount = customer.getDueAmount();
+		if (Objects.nonNull(dueAmount)) {
+			// Add new sale's due to existing due amount
+			BigDecimal newDue = dueAmount.add(totalPrice).subtract(createSaleDto.getAmountPaid());
+			customer.setDueAmount(newDue);
+		}
+		customerRepository.save(customer);
+		sale.setCustomer(customer);
 		// 5. Save sale
 		Sale savedSale = saleRepository.save(sale);
 
@@ -130,7 +136,7 @@ public class SaleService {
 		dto.setCreatedAt(sale.getCreatedAt());
 
 		// Calculate due amount
-		BigDecimal dueAmount = sale.getTotalPrice().subtract(sale.getPaidAmount());
+		BigDecimal dueAmount = sale.getCustomer().getDueAmount();
 		dto.setDueAmount(dueAmount);
 
 		return dto;
