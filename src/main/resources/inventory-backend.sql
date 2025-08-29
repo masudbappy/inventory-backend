@@ -125,13 +125,15 @@ CREATE TABLE IF NOT EXISTS sales_order (
 
 -- PAYMENT_LOG table
 CREATE TABLE IF NOT EXISTS payment_log (
-    payment_log_id BIGSERIAL PRIMARY KEY,
-    sale_id BIGINT REFERENCES sale(sale_id),
-    user_id BIGINT REFERENCES users(user_id),
-    payment_amount DECIMAL(10,2) NOT NULL,
-    date DATE DEFAULT CURRENT_DATE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        payment_log_id BIGSERIAL PRIMARY KEY,
+        customer_id BIGINT REFERENCES customer(customer_id) ON DELETE SET NULL,
+        sale_id BIGINT REFERENCES sale(sale_id) ON DELETE SET NULL,
+        amount NUMERIC(10, 2) NOT NULL,
+        payment_method VARCHAR(255),
+        note TEXT,
+        payment_date DATE,
+        created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW(),
+        updated_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW()
 );
 
 -- EXPENSE table
