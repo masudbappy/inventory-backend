@@ -16,7 +16,6 @@ public class CreateSaleDto {
 	private LocalDate date;
 
 	@Valid
-	@NotEmpty(message = "At least one product is required")
 	private List<ProductSaleDto> products;
 
 	@DecimalMin(value = "0.0", message = "Discount must be non-negative")

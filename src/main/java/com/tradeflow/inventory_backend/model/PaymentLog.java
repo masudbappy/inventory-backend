@@ -16,18 +16,24 @@ public class PaymentLog {
     private Long paymentLogId;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "customer_id")
+    private Customer customer;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sale_id")
     private Sale sale;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User user;
+    @Column(name = "amount", precision = 10, scale = 2, nullable = false)
+    private BigDecimal amount;
 
-    @Column(name = "payment_amount", precision = 10, scale = 2, nullable = false)
-    private BigDecimal paymentAmount;
+    @Column(name = "payment_method")
+    private String paymentMethod;
 
-    @Column(name = "date")
-    private LocalDate date = LocalDate.now();
+    @Column(name = "note")
+    private String note;
+
+    @Column(name = "payment_date")
+    private LocalDate paymentDate;
 
     @CreationTimestamp
     @Column(name = "created_at")
@@ -37,23 +43,30 @@ public class PaymentLog {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    // Constructors, getters, and setters
+    // Constructors
     public PaymentLog() {}
 
+    // Getters and setters
     public Long getPaymentLogId() { return paymentLogId; }
     public void setPaymentLogId(Long paymentLogId) { this.paymentLogId = paymentLogId; }
+
+    public Customer getCustomer() { return customer; }
+    public void setCustomer(Customer customer) { this.customer = customer; }
 
     public Sale getSale() { return sale; }
     public void setSale(Sale sale) { this.sale = sale; }
 
-    public User getUser() { return user; }
-    public void setUser(User user) { this.user = user; }
+    public BigDecimal getAmount() { return amount; }
+    public void setAmount(BigDecimal amount) { this.amount = amount; }
 
-    public BigDecimal getPaymentAmount() { return paymentAmount; }
-    public void setPaymentAmount(BigDecimal paymentAmount) { this.paymentAmount = paymentAmount; }
+    public String getPaymentMethod() { return paymentMethod; }
+    public void setPaymentMethod(String paymentMethod) { this.paymentMethod = paymentMethod; }
 
-    public LocalDate getDate() { return date; }
-    public void setDate(LocalDate date) { this.date = date; }
+    public String getNote() { return note; }
+    public void setNote(String note) { this.note = note; }
+
+    public LocalDate getPaymentDate() { return paymentDate; }
+    public void setPaymentDate(LocalDate paymentDate) { this.paymentDate = paymentDate; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

@@ -1,10 +1,14 @@
 package com.tradeflow.inventory_backend.service;
 
 import com.tradeflow.inventory_backend.dto.CustomerDto;
+import com.tradeflow.inventory_backend.dto.CustomerPaymentDto;
 import com.tradeflow.inventory_backend.dto.output.CustomerResponseDto;
 import com.tradeflow.inventory_backend.exception.ResourceNotFoundException;
 import com.tradeflow.inventory_backend.model.Customer;
+import com.tradeflow.inventory_backend.model.PaymentLog;
+import com.tradeflow.inventory_backend.model.PaymentStatus;
 import com.tradeflow.inventory_backend.repository.CustomerRepository;
+import com.tradeflow.inventory_backend.repository.PaymentLogRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -12,6 +16,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -21,10 +26,12 @@ import java.util.stream.Collectors;
 public class CustomerService {
 
 	private final CustomerRepository customerRepository;
+	private final PaymentLogRepository paymentLogRepository;
 
-	public CustomerService(CustomerRepository customerRepository) {
+	public CustomerService(CustomerRepository customerRepository, PaymentLogRepository paymentLogRepository) {
 		this.customerRepository = customerRepository;
-	}
+        this.paymentLogRepository = paymentLogRepository;
+    }
 
 	public CustomerResponseDto createCustomer(CustomerDto customerDto) {
 		validateUniqueConstraints(customerDto, null);
@@ -97,6 +104,42 @@ public class CustomerService {
 						}
 					});
 		}
+	}
+
+	@Transactional
+	public void processPayment(CustomerPaymentDto paymentDto) throws ResourceNotFoundException {
+		// Find customer
+		Customer customer = customerRepository.findById(paymentDto.getCustomerId())
+				.orElseThrow(() -> new ResourceNotFoundException("Customer not found with ID: " + paymentDto.getCustomerId()));
+
+		// Validate payment amount
+		if (paymentDto.getAmount().compareTo(customer.getDueAmount()) > 0) {
+			throw new IllegalArgumentException("Payment amount cannot exceed due amount of " + customer.getDueAmount());
+		}
+
+		// Update customer due amount
+		BigDecimal newDueAmount = customer.getDueAmount().subtract(paymentDto.getAmount());
+		customer.setDueAmount(newDueAmount);
+
+		// Update payment status
+		if (newDueAmount.compareTo(BigDecimal.ZERO) == 0) {
+			customer.setPaymentStatus(PaymentStatus.PAID);
+		} else {
+			customer.setPaymentStatus(PaymentStatus.PARTIAL);
+		}
+
+		customerRepository.save(customer);
+
+		// Create payment log
+		PaymentLog paymentLog = new PaymentLog();
+		paymentLog.setCustomer(customer);
+		paymentLog.setAmount(paymentDto.getAmount());
+		paymentLog.setPaymentMethod(paymentDto.getPaymentMethod());
+		paymentLog.setNote(paymentDto.getNote());
+		paymentLog.setPaymentDate(paymentDto.getDate());
+		paymentLog.setCreatedAt(LocalDateTime.now());
+
+		paymentLogRepository.save(paymentLog);
 	}
 
 	private CustomerResponseDto convertToResponseDto(Customer customer) {

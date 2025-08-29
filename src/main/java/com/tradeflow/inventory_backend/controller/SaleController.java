@@ -1,8 +1,10 @@
 package com.tradeflow.inventory_backend.controller;
 
 import com.tradeflow.inventory_backend.dto.CreateSaleDto;
+import com.tradeflow.inventory_backend.dto.CustomerPaymentDto;
 import com.tradeflow.inventory_backend.dto.output.SaleResponseDto;
 import com.tradeflow.inventory_backend.exception.ResourceNotFoundException;
+import com.tradeflow.inventory_backend.service.CustomerService;
 import com.tradeflow.inventory_backend.service.SaleService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -14,6 +16,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/sales")
 @CrossOrigin(origins = {"http://localhost:3000", "http://127.0.0.1:3000"})
@@ -21,10 +26,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class SaleController {
 
 	private final SaleService saleService;
+	private final CustomerService customerService;
 
-	public SaleController(SaleService saleService) {
+	public SaleController(SaleService saleService, CustomerService customerService) {
 		this.saleService = saleService;
-	}
+        this.customerService = customerService;
+    }
 
 	@PostMapping
 	public ResponseEntity<SaleResponseDto> createSale(@Valid @RequestBody CreateSaleDto createSaleDto)
@@ -67,4 +74,24 @@ public class SaleController {
 		Page<SaleResponseDto> sales = saleService.searchSales(query, page, size, sortBy, sortDir);
 		return ResponseEntity.ok(sales);
 	}*/
+
+	@PostMapping("/payment")
+	@PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER')")
+	public ResponseEntity<?> processCustomerPayment(@Valid @RequestBody CustomerPaymentDto paymentDto) {
+		try {
+			customerService.processPayment(paymentDto);
+
+			Map<String, Object> response = new HashMap<>();
+			response.put("success", true);
+			response.put("message", "Payment processed successfully");
+
+			return ResponseEntity.ok(response);
+		} catch (ResourceNotFoundException e) {
+			return ResponseEntity.badRequest()
+					.body(Map.of("success", false, "message", e.getMessage()));
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body(Map.of("success", false, "message", "Payment processing failed"));
+		}
+	}
 }
