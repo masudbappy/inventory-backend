@@ -28,7 +28,7 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
         s.date,
         s.totalPrice,
         s.paidAmount,
-        (s.totalPrice - s.paidAmount),
+        c.dueAmount,
         CASE
             WHEN (s.totalPrice - s.paidAmount) = 0 THEN 'PAID'
             WHEN s.paidAmount > 0 THEN 'PARTIAL'
@@ -40,8 +40,8 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
     )
     FROM Sale s JOIN s.customer c
     WHERE (:customerId IS NULL OR c.customerId = :customerId)
-        AND (:searchQuery IS NULL OR :searchQuery = '' OR 
-             LOWER(c.name) LIKE LOWER(CONCAT('%', :searchQuery, '%')) OR 
+        AND (:searchQuery IS NULL OR :searchQuery = '' OR
+             LOWER(c.name) LIKE LOWER(CONCAT('%', :searchQuery, '%')) OR
              c.contactNumber LIKE CONCAT('%', :searchQuery, '%'))
         AND (:status IS NULL OR :status = '' OR
             (:status = 'PAID' AND (s.totalPrice - s.paidAmount) = 0) OR
@@ -61,7 +61,7 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
         p.paymentDate,
         CAST(0 AS java.math.BigDecimal),
         p.amount,
-        CAST(0 AS java.math.BigDecimal),
+        c.dueAmount,
         'PAYMENT',
         'PAYMENT',
         p.paymentMethod,
@@ -69,8 +69,8 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
     )
     FROM PaymentLog p JOIN p.customer c LEFT JOIN p.sale s
     WHERE (:customerId IS NULL OR c.customerId = :customerId)
-        AND (:searchQuery IS NULL OR :searchQuery = '' OR 
-             LOWER(c.name) LIKE LOWER(CONCAT('%', :searchQuery, '%')) OR 
+        AND (:searchQuery IS NULL OR :searchQuery = '' OR
+             LOWER(c.name) LIKE LOWER(CONCAT('%', :searchQuery, '%')) OR
              c.contactNumber LIKE CONCAT('%', :searchQuery, '%'))
         AND (:status IS NULL OR :status = '' OR :status = 'PAYMENT')
     """)
