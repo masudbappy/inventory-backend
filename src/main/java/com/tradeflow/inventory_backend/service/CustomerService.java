@@ -2,6 +2,7 @@ package com.tradeflow.inventory_backend.service;
 
 import com.tradeflow.inventory_backend.dto.CustomerDto;
 import com.tradeflow.inventory_backend.dto.CustomerPaymentDto;
+import com.tradeflow.inventory_backend.dto.CustomerPaymentHistoryDto;
 import com.tradeflow.inventory_backend.dto.output.CustomerResponseDto;
 import com.tradeflow.inventory_backend.exception.ResourceNotFoundException;
 import com.tradeflow.inventory_backend.model.Customer;
@@ -9,15 +10,14 @@ import com.tradeflow.inventory_backend.model.PaymentLog;
 import com.tradeflow.inventory_backend.model.PaymentStatus;
 import com.tradeflow.inventory_backend.repository.CustomerRepository;
 import com.tradeflow.inventory_backend.repository.PaymentLogRepository;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import com.tradeflow.inventory_backend.repository.SaleRepository;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -27,10 +27,12 @@ public class CustomerService {
 
 	private final CustomerRepository customerRepository;
 	private final PaymentLogRepository paymentLogRepository;
+	private final SaleRepository saleRepository;
 
-	public CustomerService(CustomerRepository customerRepository, PaymentLogRepository paymentLogRepository) {
+	public CustomerService(CustomerRepository customerRepository, PaymentLogRepository paymentLogRepository, SaleRepository saleRepository) {
 		this.customerRepository = customerRepository;
         this.paymentLogRepository = paymentLogRepository;
+        this.saleRepository = saleRepository;
     }
 
 	public CustomerResponseDto createCustomer(CustomerDto customerDto) {
@@ -141,6 +143,83 @@ public class CustomerService {
 
 		paymentLogRepository.save(paymentLog);
 	}
+
+	public Page<CustomerPaymentHistoryDto> getAllCustomersPaymentHistory(int page, int size, String sortBy,
+																		 String sortDir, Long customerId,
+																		 String transactionType, String searchQuery,
+																		 String status) {
+
+		// Normalize empty strings to null
+		searchQuery = (searchQuery != null && searchQuery.trim().isEmpty()) ? null : searchQuery;
+		status = (status != null && status.trim().isEmpty()) ? null : status;
+		transactionType = (transactionType != null && transactionType.trim().isEmpty()) ? null : transactionType;
+
+		Pageable pageable = PageRequest.of(page, size,
+				sortDir.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending());
+
+		if ("SALE".equals(transactionType)) {
+			return customerRepository.findSaleHistory(customerId, searchQuery, status, pageable);
+		} else if ("PAYMENT".equals(transactionType)) {
+			return customerRepository.findPaymentHistory(customerId, searchQuery, status, pageable);
+		} else {
+			// Get both types and combine them
+			List<CustomerPaymentHistoryDto> allHistory = new ArrayList<>();
+
+			// Get sales
+			Page<CustomerPaymentHistoryDto> sales = customerRepository.findSaleHistory(customerId, searchQuery, status, PageRequest.of(0, Integer.MAX_VALUE));
+			allHistory.addAll(sales.getContent());
+
+			// Get payments (only if status is null or PAYMENT)
+			if (status == null || "PAYMENT".equals(status)) {
+				Page<CustomerPaymentHistoryDto> payments = customerRepository.findPaymentHistory(customerId, searchQuery, status, PageRequest.of(0, Integer.MAX_VALUE));
+				allHistory.addAll(payments.getContent());
+			}
+
+			// Sort combined results
+			allHistory.sort((a, b) -> {
+				int result = 0;
+				switch (sortBy) {
+					case "date":
+						result = a.getDate().compareTo(b.getDate());
+						break;
+					case "customerName":
+						result = a.getCustomerName().compareTo(b.getCustomerName());
+						break;
+					case "totalAmount":
+						result = a.getTotalAmount().compareTo(b.getTotalAmount());
+						break;
+					case "amountPaid":
+						result = a.getAmountPaid().compareTo(b.getAmountPaid());
+						break;
+					default:
+						result = a.getDate().compareTo(b.getDate());
+				}
+				return sortDir.equalsIgnoreCase("desc") ? -result : result;
+			});
+
+			// Apply pagination
+			int start = page * size;
+			int end = Math.min(start + size, allHistory.size());
+			List<CustomerPaymentHistoryDto> pageContent = allHistory.subList(start, end);
+
+			return new PageImpl<>(pageContent, pageable, allHistory.size());
+		}
+	}
+
+	/*private CustomerPaymentHistoryDto convertProjectionToDto(CustomerPaymentHistoryProjection projection) {
+		CustomerPaymentHistoryDto dto = new CustomerPaymentHistoryDto();
+		dto.setSaleCode(projection.getSaleCode());
+		dto.setCustomerName(projection.getCustomerName());
+		dto.setDate(projection.getDate());
+		dto.setTotalAmount(projection.getTotalAmount());
+		dto.setAmountPaid(projection.getAmountPaid());
+		dto.setDueAmount(projection.getDueAmount());
+		dto.setStatus(projection.getStatus());
+		dto.setTransactionType(projection.getTransactionType());
+		dto.setPaymentMethod(projection.getPaymentMethod());
+		dto.setNote(projection.getNote());
+		return dto;
+	}*/
 
 	private CustomerResponseDto convertToResponseDto(Customer customer) {
 		CustomerResponseDto dto = new CustomerResponseDto();
