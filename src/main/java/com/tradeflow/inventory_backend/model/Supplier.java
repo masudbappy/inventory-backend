@@ -5,6 +5,8 @@ import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -24,6 +26,9 @@ public class Supplier {
 
     @Column(name = "address")
     private String address;
+
+    @Column(name = "due_amount", precision = 10, scale = 2)
+    private BigDecimal dueAmount = BigDecimal.ZERO;
 
     @CreationTimestamp
     @Column(name = "created_at")
@@ -54,6 +59,14 @@ public class Supplier {
 
     public String getAddress() { return address; }
     public void setAddress(String address) { this.address = address; }
+
+    public BigDecimal getDueAmount() {
+        return dueAmount;
+    }
+
+    public void setDueAmount(BigDecimal dueAmount) {
+        this.dueAmount = dueAmount;
+    }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

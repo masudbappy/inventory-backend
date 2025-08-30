@@ -37,8 +37,27 @@ CREATE TABLE IF NOT EXISTS supplier (
     name VARCHAR(255) NOT NULL,
     contact_number VARCHAR(20),
     address VARCHAR(500),
+    due_amount DECIMAL(10,2) DEFAULT 0.00,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS shipment(
+    shipment_id BIGSERIAL PRIMARY KEY,
+    supplier_id BIGINT NOT NULL,
+    date DATE NOT NULL,
+    purchase_amount NUMERIC(10, 2) NOT NULL,
+    labor_cost NUMERIC(10, 2) DEFAULT 0.00,
+    transport_cost NUMERIC(10, 2) DEFAULT 0.00,
+    paid_amount NUMERIC(10, 2) DEFAULT 0.00,
+    total_amount NUMERIC(10, 2) NOT NULL,
+    due_amount NUMERIC(10, 2) NOT NULL,
+    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_supplier
+        FOREIGN KEY (supplier_id)
+        REFERENCES supplier(supplier_id)
+        ON DELETE RESTRICT
 );
 
 -- CUSTOMER table
@@ -153,6 +172,7 @@ CREATE INDEX IF NOT EXISTS idx_product_category ON product(category_id);
 CREATE INDEX IF NOT EXISTS idx_product_supplier ON product(supplier_id);
 CREATE INDEX IF NOT EXISTS idx_product_type ON product(type_id);
 CREATE INDEX IF NOT EXISTS idx_purchase_supplier ON purchase(supplier_id);
+CREATE INDEX IF NOT EXISTS idx_shipment_supplier ON shipment(supplier_id);
 CREATE INDEX IF NOT EXISTS idx_sale_customer ON sale(customer_id);
 CREATE INDEX IF NOT EXISTS idx_sale_user ON sale(user_id);
 CREATE INDEX IF NOT EXISTS idx_payment_log_sale ON payment_log(sale_id);
