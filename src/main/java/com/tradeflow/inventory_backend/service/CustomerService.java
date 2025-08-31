@@ -206,21 +206,6 @@ public class CustomerService {
 		}
 	}
 
-	/*private CustomerPaymentHistoryDto convertProjectionToDto(CustomerPaymentHistoryProjection projection) {
-		CustomerPaymentHistoryDto dto = new CustomerPaymentHistoryDto();
-		dto.setSaleCode(projection.getSaleCode());
-		dto.setCustomerName(projection.getCustomerName());
-		dto.setDate(projection.getDate());
-		dto.setTotalAmount(projection.getTotalAmount());
-		dto.setAmountPaid(projection.getAmountPaid());
-		dto.setDueAmount(projection.getDueAmount());
-		dto.setStatus(projection.getStatus());
-		dto.setTransactionType(projection.getTransactionType());
-		dto.setPaymentMethod(projection.getPaymentMethod());
-		dto.setNote(projection.getNote());
-		return dto;
-	}*/
-
 	private CustomerResponseDto convertToResponseDto(Customer customer) {
 		CustomerResponseDto dto = new CustomerResponseDto();
 		dto.setCustomerId(customer.getCustomerId());
