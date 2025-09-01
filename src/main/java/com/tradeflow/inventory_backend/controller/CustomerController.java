@@ -77,12 +77,11 @@ public class CustomerController {
             @RequestParam(defaultValue = "date") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir,
             @RequestParam(required = false) Long customerId,
-            @RequestParam(required = false) String transactionType,
             @RequestParam(required = false, name = "search") String searchQuery,
             @RequestParam(required = false) String status) {
 
         Page<CustomerPaymentHistoryDto> paymentHistory = customerService.getAllCustomersPaymentHistory(
-                page, size, sortBy, sortDir, customerId, transactionType, searchQuery, status);
+                page, size, sortBy, sortDir, customerId, searchQuery, status);
 
         return ResponseEntity.ok(paymentHistory);
     }
