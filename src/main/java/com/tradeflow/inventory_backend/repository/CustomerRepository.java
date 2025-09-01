@@ -62,7 +62,12 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
         CAST(0 AS java.math.BigDecimal),
         p.amount,
         c.dueAmount,
-        'PAYMENT',
+        CASE
+            WHEN p.amount = 0 THEN 'UNPAID'
+            WHEN c.dueAmount = 0 THEN 'PAID'
+            WHEN c.dueAmount > 0 THEN 'PARTIAL'
+            ELSE 'PAYMENT'
+        END,
         'PAYMENT',
         p.paymentMethod,
         COALESCE(p.note, '')
@@ -72,7 +77,11 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
         AND (:searchQuery IS NULL OR :searchQuery = '' OR
              LOWER(c.name) LIKE LOWER(CONCAT('%', :searchQuery, '%')) OR
              c.contactNumber LIKE CONCAT('%', :searchQuery, '%'))
-        AND (:status IS NULL OR :status = '' OR :status = 'PAYMENT')
+        AND (:status IS NULL OR :status = '' OR :status = 'ALL' OR
+            (:status = 'PAID' AND c.dueAmount = 0) OR
+            (:status = 'PARTIAL' AND c.dueAmount > 0) OR
+            (:status = 'UNPAID' AND p.amount = 0) OR
+            (:status = 'PAYMENT'))
     """)
 	Page<CustomerPaymentHistoryDto> findPaymentHistory(
 			@Param("customerId") Long customerId,
