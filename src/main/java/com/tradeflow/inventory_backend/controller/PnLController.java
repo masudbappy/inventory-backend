@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,19 +26,12 @@ public class PnLController {
 		this.pnlCalculationService = pnlCalculationService;
 	}
 
-	@GetMapping("/daily")
-	public ResponseEntity<PnLResponse> getDailyPnL(
-			@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-			@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
 
-		PnLResponse response = pnlCalculationService.calculatePnL(PeriodType.DAILY, startDate, endDate);
-		return ResponseEntity.ok(response);
-	}
-
-	@GetMapping("/monthly")
-	public ResponseEntity<?> getMonthlyPnL(
+	@GetMapping
+	public ResponseEntity<?> getPnL(
 			@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-			@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+			@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+			@RequestParam(required = false) PeriodType groupBy) {
 
 		// Validate date range
 		if (endDate.isBefore(startDate)) {
@@ -48,7 +42,13 @@ public class PnLController {
 		}
 
 		try {
-			PnLResponse response = pnlCalculationService.calculatePnL(PeriodType.MONTHLY, startDate, endDate);
+			// Auto-determine period type if not specified
+			PeriodType periodType = groupBy;
+			if (periodType == null) {
+				periodType = determinePeriodType(startDate, endDate);
+			}
+
+			PnLResponse response = pnlCalculationService.calculatePnL(periodType, startDate, endDate);
 			return ResponseEntity.ok(response);
 		} catch (Exception e) {
 			Map<String, String> error = new HashMap<>();
@@ -58,27 +58,45 @@ public class PnLController {
 		}
 	}
 
-	@GetMapping("/yearly")
-	public ResponseEntity<PnLResponse> getYearlyPnL(
-			@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-			@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-
-		PnLResponse response = pnlCalculationService.calculatePnL(PeriodType.YEARLY, startDate, endDate);
-		return ResponseEntity.ok(response);
-	}
 
 	@GetMapping("/today")
-	public ResponseEntity<PnLResponse> getTodayPnL() {
+	public ResponseEntity<?> getTodayPnL() {
 		LocalDate today = LocalDate.now();
-		PnLResponse response = pnlCalculationService.calculatePnL(PeriodType.DAILY, today, today);
-		return ResponseEntity.ok(response);
+		try {
+			PnLResponse response = pnlCalculationService.calculatePnL(PeriodType.DAILY, today, today);
+			return ResponseEntity.ok(response);
+		} catch (Exception e) {
+			Map<String, String> error = new HashMap<>();
+			error.put("error", "Processing error");
+			error.put("message", e.getMessage());
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+		}
 	}
 
 	@GetMapping("/sales-details")
-	public ResponseEntity<List<SalePnLData>> getSalesDetails(
+	public ResponseEntity<?> getSalesDetails(
 			@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
 
-		List<SalePnLData> salesDetails = pnlCalculationService.getSalesPnLDetails(date);
-		return ResponseEntity.ok(salesDetails);
+		try {
+			List<SalePnLData> salesDetails = pnlCalculationService.getSalesPnLDetails(date);
+			return ResponseEntity.ok(salesDetails);
+		} catch (Exception e) {
+			Map<String, String> error = new HashMap<>();
+			error.put("error", "Processing error");
+			error.put("message", e.getMessage());
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+		}
+	}
+
+	private PeriodType determinePeriodType(LocalDate fromDate, LocalDate toDate) {
+		long daysBetween = ChronoUnit.DAYS.between(fromDate, toDate);
+
+		if (daysBetween <= 31) {
+			return PeriodType.DAILY;
+		} else if (daysBetween <= 365) {
+			return PeriodType.MONTHLY;
+		} else {
+			return PeriodType.YEARLY;
+		}
 	}
 }

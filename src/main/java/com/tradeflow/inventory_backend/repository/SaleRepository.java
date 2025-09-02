@@ -17,12 +17,7 @@ public interface SaleRepository extends JpaRepository<Sale, Long> {
 
 	List<Sale> findByCreatedAtBetween(LocalDateTime startDate, LocalDateTime endDate);
 
-	// Or if you have a different date field name:
-	// List<Sale> findByDateBetween(LocalDateTime startDate, LocalDateTime endDate);
-	// List<Sale> findByUpdatedAtBetween(LocalDateTime startDate, LocalDateTime endDate);
-
-	// Or use a custom query to be safe:
-	@Query("SELECT s FROM Sale s WHERE s.createdAt BETWEEN :startDate AND :endDate ORDER BY s.createdAt")
+	@Query("SELECT s FROM Sale s WHERE s.createdAt >= :startDate AND s.createdAt <= :endDate ORDER BY s.createdAt DESC")
 	List<Sale> findSalesBetweenDates(@Param("startDate") LocalDateTime startDate,
-	                                 @Param("endDate") LocalDateTime endDate);
+									 @Param("endDate") LocalDateTime endDate);
 }

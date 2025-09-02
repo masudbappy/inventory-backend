@@ -1,13 +1,11 @@
 package com.tradeflow.inventory_backend.service;
 
-
 import com.tradeflow.inventory_backend.dto.PnLData;
 import com.tradeflow.inventory_backend.dto.SalePnLData;
 import com.tradeflow.inventory_backend.dto.output.PnLResponse;
 import com.tradeflow.inventory_backend.model.Product;
 import com.tradeflow.inventory_backend.model.Sale;
 import com.tradeflow.inventory_backend.model.SalesOrder;
-import com.tradeflow.inventory_backend.repository.ProductRepository;
 import com.tradeflow.inventory_backend.repository.SaleRepository;
 import com.tradeflow.inventory_backend.repository.SalesOrderRepository;
 import org.springframework.stereotype.Service;
@@ -22,17 +20,13 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@Transactional
+@Transactional(readOnly = true)
 public class PnLCalculationService {
 
-	private final ProductRepository productRepository;
-
 	private final SaleRepository saleRepository;
-
 	private final SalesOrderRepository salesOrderRepository;
 
-	public PnLCalculationService(ProductRepository productRepository, SaleRepository saleRepository, SalesOrderRepository salesOrderRepository) {
-		this.productRepository = productRepository;
+	public PnLCalculationService(SaleRepository saleRepository, SalesOrderRepository salesOrderRepository) {
 		this.saleRepository = saleRepository;
 		this.salesOrderRepository = salesOrderRepository;
 	}
@@ -46,7 +40,7 @@ public class PnLCalculationService {
 			case YEARLY:
 				return calculateYearlyPnL(startDate, endDate);
 			default:
-				throw new IllegalArgumentException("Invalid period type");
+				throw new IllegalArgumentException("Invalid period type: " + periodType);
 		}
 	}
 
@@ -65,15 +59,21 @@ public class PnLCalculationService {
 		List<PnLData> monthlyPnL = new ArrayList<>();
 
 		LocalDate current = startDate.withDayOfMonth(1);
+
 		while (!current.isAfter(endDate)) {
 			LocalDate monthEnd = current.withDayOfMonth(current.lengthOfMonth());
-			if (monthEnd.isAfter(endDate)) {
-				monthEnd = endDate;
-			}
 
-			PnLData monthPnL = calculatePnLForPeriod(current, monthEnd);
-			monthPnL.setPeriodLabel(current.getYear() + "-" + String.format("%02d", current.getMonthValue()));
-			monthlyPnL.add(monthPnL);
+			// Adjust boundaries to actual date range
+			LocalDate periodStart = current.isBefore(startDate) ? startDate : current;
+			LocalDate periodEnd = monthEnd.isAfter(endDate) ? endDate : monthEnd;
+
+			// Only calculate if the period is valid
+			if (!periodStart.isAfter(periodEnd)) {
+				// Sum up daily PnL for this month
+				PnLData monthPnL = sumDailyPnLForPeriod(periodStart, periodEnd);
+				monthPnL.setPeriodLabel(current.getYear() + "-" + String.format("%02d", current.getMonthValue()));
+				monthlyPnL.add(monthPnL);
+			}
 
 			current = current.plusMonths(1);
 		}
@@ -84,48 +84,73 @@ public class PnLCalculationService {
 	private PnLResponse calculateYearlyPnL(LocalDate startDate, LocalDate endDate) {
 		List<PnLData> yearlyPnL = new ArrayList<>();
 
-		LocalDate current = startDate.withDayOfYear(1);
-		while (!current.isAfter(endDate)) {
-			LocalDate yearEnd = LocalDate.of(current.getYear(), 12, 31);
+		int startYear = startDate.getYear();
+		int endYear = endDate.getYear();
+
+		for (int year = startYear; year <= endYear; year++) {
+			LocalDate yearStart = LocalDate.of(year, 1, 1);
+			LocalDate yearEnd = LocalDate.of(year, 12, 31);
+
+			// Adjust to actual date range boundaries
+			if (yearStart.isBefore(startDate)) {
+				yearStart = startDate;
+			}
 			if (yearEnd.isAfter(endDate)) {
 				yearEnd = endDate;
 			}
 
-			PnLData yearPnL = calculatePnLForPeriod(current, yearEnd);
-			yearPnL.setPeriodLabel(String.valueOf(current.getYear()));
+			// Sum up daily PnL for this year
+			PnLData yearPnL = sumDailyPnLForPeriod(yearStart, yearEnd);
+			yearPnL.setPeriodLabel(String.valueOf(year));
 			yearlyPnL.add(yearPnL);
-
-			current = current.plusYears(1);
 		}
 
 		return new PnLResponse(yearlyPnL, calculateTotalPnL(yearlyPnL));
 	}
 
+	// New method to sum daily PnL for a given period
+	private PnLData sumDailyPnLForPeriod(LocalDate startDate, LocalDate endDate) {
+		BigDecimal totalRevenue = BigDecimal.ZERO;
+		BigDecimal totalCost = BigDecimal.ZERO;
+		BigDecimal totalProfit = BigDecimal.ZERO;
+		BigDecimal totalQuantity = BigDecimal.ZERO;
+		BigDecimal totalSales = BigDecimal.ZERO;
+
+		for (LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) {
+			PnLData dayPnL = calculatePnLForDate(date);
+
+			totalRevenue = totalRevenue.add(dayPnL.getTotalRevenue());
+			totalCost = totalCost.add(dayPnL.getTotalCost());
+			totalProfit = totalProfit.add(dayPnL.getTotalProfit());
+			totalQuantity = totalQuantity.add(dayPnL.getTotalQuantity());
+			totalSales = totalSales.add(dayPnL.getTotalSales());
+		}
+
+		return new PnLData(startDate, endDate, totalRevenue, totalCost,
+				totalProfit, totalQuantity, totalSales);
+	}
+
 	private PnLData calculatePnLForDate(LocalDate date) {
 		LocalDateTime startOfDay = date.atStartOfDay();
-		LocalDateTime endOfDay = date.atTime(23, 59, 59);
+		LocalDateTime endOfDay = date.atTime(23, 59, 59, 999999999);
 
 		List<Sale> sales = saleRepository.findByCreatedAtBetween(startOfDay, endOfDay);
 
 		BigDecimal totalRevenue = BigDecimal.ZERO;
 		BigDecimal totalCost = BigDecimal.ZERO;
-		BigDecimal totalQuantity = BigDecimal.valueOf(0);
+		BigDecimal totalQuantity = BigDecimal.ZERO; // Fixed initialization
 
 		for (Sale sale : sales) {
 			List<SalesOrder> salesOrders = salesOrderRepository.findBySaleId(sale.getSaleId());
 
 			for (SalesOrder order : salesOrders) {
 				Product product = order.getProduct();
-
-				// Calculate revenue and cost for this order
-//				BigDecimal orderRevenue = product.getSellingPrice().multiply(order.getQuantity());
 				BigDecimal orderCost = product.getBuyingPrice().multiply(order.getQuantity());
 
 				totalCost = totalCost.add(orderCost);
-				totalQuantity.add(order.getQuantity());
+				totalQuantity = totalQuantity.add(order.getQuantity()); // Fixed: was missing assignment
 			}
 			totalRevenue = totalRevenue.add(sale.getTotalPrice());
-
 		}
 
 		BigDecimal profit = totalRevenue.subtract(totalCost);
@@ -136,27 +161,26 @@ public class PnLCalculationService {
 
 	private PnLData calculatePnLForPeriod(LocalDate startDate, LocalDate endDate) {
 		LocalDateTime startDateTime = startDate.atStartOfDay();
-		LocalDateTime endDateTime = endDate.atTime(23, 59, 59);
+		LocalDateTime endDateTime = endDate.atTime(23, 59, 59, 999999999);
 
+		// Single query to get all sales in the exact period
 		List<Sale> sales = saleRepository.findSalesBetweenDates(startDateTime, endDateTime);
 
 		BigDecimal totalRevenue = BigDecimal.ZERO;
 		BigDecimal totalCost = BigDecimal.ZERO;
-		BigDecimal totalQuantity = BigDecimal.valueOf(0);
+		BigDecimal totalQuantity = BigDecimal.ZERO;
 
 		for (Sale sale : sales) {
-			List<SalesOrder> salesOrders = salesOrderRepository.findBySaleId(sale.getSaleId());
+			totalRevenue = totalRevenue.add(sale.getTotalPrice());
 
+			List<SalesOrder> salesOrders = salesOrderRepository.findBySaleId(sale.getSaleId());
 			for (SalesOrder order : salesOrders) {
 				Product product = order.getProduct();
-
-//				BigDecimal orderRevenue = product.getSellingPrice().multiply(order.getQuantity());
 				BigDecimal orderCost = product.getBuyingPrice().multiply(order.getQuantity());
 
 				totalCost = totalCost.add(orderCost);
-				totalQuantity.add(order.getQuantity());
+				totalQuantity = totalQuantity.add(order.getQuantity());
 			}
-			totalRevenue = totalRevenue.add(sale.getTotalPrice());
 		}
 
 		BigDecimal profit = totalRevenue.subtract(totalCost);
@@ -189,7 +213,7 @@ public class PnLCalculationService {
 
 	public List<SalePnLData> getSalesPnLDetails(LocalDate date) {
 		LocalDateTime startOfDay = date.atStartOfDay();
-		LocalDateTime endOfDay = date.atTime(23, 59, 59);
+		LocalDateTime endOfDay = date.atTime(23, 59, 59, 999999999);
 
 		List<Sale> sales = saleRepository.findSalesBetweenDates(startOfDay, endOfDay);
 
@@ -199,19 +223,16 @@ public class PnLCalculationService {
 	private SalePnLData calculateSalePnL(Sale sale) {
 		List<SalesOrder> orders = salesOrderRepository.findBySaleId(sale.getSaleId());
 
-		BigDecimal totalRevenue = BigDecimal.ZERO;
+		BigDecimal totalRevenue = sale.getTotalPrice();
 		BigDecimal totalCost = BigDecimal.ZERO;
-		BigDecimal totalQuantity = BigDecimal.valueOf(0);
+		BigDecimal totalQuantity = BigDecimal.ZERO; // Fixed initialization
 
 		for (SalesOrder order : orders) {
 			Product product = order.getProduct();
-
-			BigDecimal orderRevenue = product.getSellingPrice().multiply(order.getQuantity());
 			BigDecimal orderCost = product.getBuyingPrice().multiply(order.getQuantity());
 
-			totalRevenue = totalRevenue.add(orderRevenue);
 			totalCost = totalCost.add(orderCost);
-			totalQuantity.add(order.getQuantity());
+			totalQuantity = totalQuantity.add(order.getQuantity()); // Fixed: was missing assignment
 		}
 
 		BigDecimal profit = totalRevenue.subtract(totalCost);
