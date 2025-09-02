@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
@@ -65,21 +66,6 @@ public class PnLController {
 		try {
 			PnLResponse response = pnlCalculationService.calculatePnL(PeriodType.DAILY, today, today);
 			return ResponseEntity.ok(response);
-		} catch (Exception e) {
-			Map<String, String> error = new HashMap<>();
-			error.put("error", "Processing error");
-			error.put("message", e.getMessage());
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
-		}
-	}
-
-	@GetMapping("/sales-details")
-	public ResponseEntity<?> getSalesDetails(
-			@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-
-		try {
-			List<SalePnLData> salesDetails = pnlCalculationService.getSalesPnLDetails(date);
-			return ResponseEntity.ok(salesDetails);
 		} catch (Exception e) {
 			Map<String, String> error = new HashMap<>();
 			error.put("error", "Processing error");

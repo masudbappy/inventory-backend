@@ -211,15 +211,6 @@ public class PnLCalculationService {
 		return new PnLData(null, totalRevenue, totalCost, totalProfit, totalQuantity, totalSales);
 	}
 
-	public List<SalePnLData> getSalesPnLDetails(LocalDate date) {
-		LocalDateTime startOfDay = date.atStartOfDay();
-		LocalDateTime endOfDay = date.atTime(23, 59, 59, 999999999);
-
-		List<Sale> sales = saleRepository.findSalesBetweenDates(startOfDay, endOfDay);
-
-		return sales.stream().map(this::calculateSalePnL).collect(Collectors.toList());
-	}
-
 	private SalePnLData calculateSalePnL(Sale sale) {
 		List<SalesOrder> orders = salesOrderRepository.findBySaleId(sale.getSaleId());
 
