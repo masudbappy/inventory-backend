@@ -12,7 +12,9 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
+import java.time.format.DateTimeParseException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -64,5 +66,32 @@ public class GlobalExceptionHandler {
 		logger.error("Unexpected error: {}", ex.getMessage(), ex);
 		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
 				.body(new MessageResponse("An unexpected error occurred"));
+	}
+
+	@ExceptionHandler(MethodArgumentTypeMismatchException.class)
+	public ResponseEntity<Map<String, String>> handleDateConversionError(MethodArgumentTypeMismatchException ex) {
+		Map<String, String> error = new HashMap<>();
+
+		if (ex.getName().contains("Date")) {
+			error.put("error", "Invalid date format");
+			error.put("message", "Please use valid date format: YYYY-MM-DD (e.g., 2023-09-30)");
+			error.put("parameter", ex.getName());
+			error.put("value", String.valueOf(ex.getValue()));
+		} else {
+			error.put("error", "Invalid parameter");
+			error.put("message", ex.getMessage());
+		}
+
+		return ResponseEntity.badRequest().body(error);
+	}
+
+	@ExceptionHandler(DateTimeParseException.class)
+	public ResponseEntity<Map<String, String>> handleDateTimeParseException(DateTimeParseException ex) {
+		Map<String, String> error = new HashMap<>();
+		error.put("error", "Invalid date format");
+		error.put("message", "Please use valid date format: YYYY-MM-DD");
+		error.put("details", ex.getMessage());
+
+		return ResponseEntity.badRequest().body(error);
 	}
 }

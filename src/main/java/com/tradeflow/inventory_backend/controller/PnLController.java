@@ -5,11 +5,14 @@ import com.tradeflow.inventory_backend.dto.output.PnLResponse;
 import com.tradeflow.inventory_backend.enums.PeriodType;
 import com.tradeflow.inventory_backend.service.PnLCalculationService;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/pnl")
@@ -32,12 +35,27 @@ public class PnLController {
 	}
 
 	@GetMapping("/monthly")
-	public ResponseEntity<PnLResponse> getMonthlyPnL(
+	public ResponseEntity<?> getMonthlyPnL(
 			@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
 			@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
 
-		PnLResponse response = pnlCalculationService.calculatePnL(PeriodType.MONTHLY, startDate, endDate);
-		return ResponseEntity.ok(response);
+		// Validate date range
+		if (endDate.isBefore(startDate)) {
+			Map<String, String> error = new HashMap<>();
+			error.put("error", "Invalid date range");
+			error.put("message", "End date must be after or equal to start date");
+			return ResponseEntity.badRequest().body(error);
+		}
+
+		try {
+			PnLResponse response = pnlCalculationService.calculatePnL(PeriodType.MONTHLY, startDate, endDate);
+			return ResponseEntity.ok(response);
+		} catch (Exception e) {
+			Map<String, String> error = new HashMap<>();
+			error.put("error", "Processing error");
+			error.put("message", e.getMessage());
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+		}
 	}
 
 	@GetMapping("/yearly")
